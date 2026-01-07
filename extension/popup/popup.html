@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zalo Tools</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">🔵 Zalo Tools</div>
+      <button id="settingsBtn" class="icon-btn" title="Settings">⚙️</button>
+    </header>
+
+    <div class="status-section">
+      <div class="status-row">
+        <span class="status-label">Status:</span>
+        <span id="connectionStatus" class="status-value disconnected">Disconnected</span>
+      </div>
+      <div class="status-row" id="uidRow" style="display: none;">
+        <span class="status-label">UID:</span>
+        <span id="uidValue" class="status-value">-</span>
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <button id="extractBtn" class="action-btn primary">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">Extract Credentials</span>
+      </button>
+      
+      <button id="copyCredsBtn" class="action-btn" disabled>
+        <span class="btn-icon">📄</span>
+        <span class="btn-text">Copy to Clipboard</span>
+      </button>
+
+      <div class="divider"></div>
+
+      <button id="getFriendsBtn" class="action-btn" disabled>
+        <span class="btn-icon">👥</span>
+        <span class="btn-text">Get All Friends</span>
+      </button>
+
+      <button id="getGroupsBtn" class="action-btn" disabled>
+        <span class="btn-icon">👥</span>
+        <span class="btn-text">Get All Groups</span>
+      </button>
+
+      <button id="toggleNotifyBtn" class="action-btn" disabled>
+        <span class="btn-icon">🔔</span>
+        <span class="btn-text">Toggle Notifications</span>
+      </button>
+    </div>
+
+    <div class="footer">
+      <button id="dashboardBtn" class="footer-btn">Open Dashboard</button>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

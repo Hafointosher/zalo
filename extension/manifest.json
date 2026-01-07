@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "Zalo Tools",
+  "version": "1.0.0",
+  "description": "Zalo automation and management tools - Extract credentials, send messages, manage contacts",
+  
+  "permissions": [
+    "tabs",
+    "cookies",
+    "storage",
+    "activeTab",
+    "webRequest",
+    "notifications",
+    "alarms",
+    "clipboardWrite"
+  ],
+  
+  "host_permissions": [
+    "https://chat.zalo.me/*",
+    "https://*.zalo.me/*",
+    "https://wpa.chat.zalo.me/*"
+  ],
+  
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["https://chat.zalo.me/*"],
+      "js": ["content-scripts/injector.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/*", "content-scripts/page-script.js"],
+      "matches": ["https://chat.zalo.me/*"]
+    }
+  ]
+}

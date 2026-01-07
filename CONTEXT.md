@@ -1,43 +1,30 @@
 # Session Context - Zalo Extension Project
 
-## 🕒 Last Update: 2026-01-07 (Session 2)
+## 🕒 Last Update: 2026-01-07 (Session 2 - Extension boilerplate created)
 
 ### ✅ Completed
 - Deobfuscation (libs + credentials + nodes) finished; code pushed to GitHub (`Hafointosher/zalo`).
-- **Variable renaming ~95% of `libs/apis/*.js` completed** - all `get*`, `update*` files renamed with semantic variable names:
-  - `serviceUrls`, `appContext`, `api` for factory params
-  - `endpoint`, `requestParams`, `encryptedParams`, `response` for API call flow
-  - Descriptive function params (`groupId`, `friendId`, `options`, etc.)
+- **Variable renaming ~95% of `libs/apis/*.js` completed** - all `get*`, `update*` files renamed with semantic variable names
 - **`libs/zalo.js` renamed** - Zalo class with `context`, `credentials`, `loginResult`, `serverInfo`, etc.
-- **Phase 7: nodes/ZaloUser/*.js deobfuscation re-run from minified source** ✅
-  - Ran synchrony on all 7 node files from original minified source (`n8n-nodes-zalo-user-v3/dist/`)
-  - String arrays found and decoded: `a10_0x4afd` (905 strings), `a23_0x1b61` (1062 strings), etc.
+- **Phase 7: nodes/ZaloUser/*.js deobfuscation re-run from minified source** - string arrays decoded
+- **Phase 8: Extension boilerplate created** ✅
+  - Manifest V3 configuration
+  - Popup UI with status, actions, and toast notifications
+  - Background service worker for message handling
+  - Content scripts for API interception (fetch + WebSocket)
+  - Dashboard page for credentials display
+  - Placeholder icons
 
 ### ⚠️ Current State
-- `nodes/ZaloUser/*.js` - Strings decoded but **RC4 encryption layer still present**
-  - obfuscator.io uses RC4 with key for second layer encryption
-  - synchrony can decode string array but not the per-call RC4 decryption
-  - Files readable but variable names still obfuscated (`varHospitalPort`, etc.)
-  
-### 📌 Options for Next Steps
-1. **Option A: Manual rename using zca-js reference** (RECOMMENDED)
-   - Use zca-js TypeScript source as reference (see ZCA-JS-REFERENCE.md)
-   - Map obfuscated patterns to actual API methods
-   - Key patterns to look for:
-     - `selfListen: true, checkUpdate: false, logging: false` → Zalo constructor options
-     - `zpw_enk` → `ctx.secretKey`
-     - `zpw_service_map_v3` → service routing map
-     - `encodeAES` → message encryption
-     
-2. **Option B: Dynamic deobfuscation**
-   - Create Node.js script that runs the code and captures decoded strings
-   - Hook into `a10_0x2fde` calls to log decoded values
-   - Replace calls with decoded literals
+- `nodes/ZaloUser/*.js` - RC4 encryption layer still present (can be analyzed manually with ZCA-JS-REFERENCE.md)
+- `extension/` - **READY FOR TESTING** - Load as unpacked extension in Chrome/Edge
 
-3. **Option C: Skip and use zca-js directly**
-   - Since zca-js is the original TypeScript source
-   - Just reference it for extension development
-   - Keep obfuscated n8n nodes as "documentation"
+### 📌 Next Steps
+1. **Test extension** on chat.zalo.me - verify credential extraction
+2. **Port zca-js crypto** to browser (lib/crypto.js)
+3. **Implement API methods** (sendMessage, getFriends, getGroups)
+4. **Add WebSocket message parsing**
+5. **Build dashboard UI** with React/Vue or vanilla JS
 
 ### 🔧 Scripts Available
 ```bash
@@ -57,6 +44,7 @@ node scripts/extract-strings.js
 | `libs/zalo.js` | ✅ Renamed |
 | `libs/utils.js` | ⏳ Partial (utility functions, mostly clean) |
 | `nodes/ZaloUser/*.js` (7 files) | ⚠️ Strings decoded, RC4 layer present |
+| `extension/` | ✅ **NEW** - Manifest V3 boilerplate ready |
 | `scripts/deob-nodes.js` | ✅ Working - deobfuscates from minified source |
 
 ### 🔗 References

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Zalo Tools - Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+    .header {
+      background: #0068ff;
+      color: white;
+      padding: 20px 40px;
+    }
+    .header h1 { font-size: 24px; }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .stat {
+      text-align: center;
+      padding: 20px;
+    }
+    .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #0068ff;
+    }
+    .stat-label {
+      color: #666;
+      margin-top: 5px;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .btn {
+      padding: 10px 20px;
+      background: #0068ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover { background: #0052cc; }
+    .btn-secondary {
+      background: white;
+      color: #0068ff;
+      border: 1px solid #0068ff;
+    }
+    .btn-secondary:hover { background: #f0f7ff; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🔵 Zalo Tools Dashboard</h1>
+  </header>
+  
+  <div class="container">
+    <div class="grid">
+      <div class="card">
+        <div class="stat">
+          <div class="stat-value" id="friendCount">-</div>
+          <div class="stat-label">Friends</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stat">
+          <div class="stat-value" id="groupCount">-</div>
+          <div class="stat-label">Groups</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="stat">
+          <div class="stat-value" id="messageCount">-</div>
+          <div class="stat-label">Messages Today</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>📋 Credentials</h2>
+      <pre id="credentialsJson">Loading...</pre>
+      <div style="margin-top: 15px;">
+        <button class="btn" id="copyBtn">Copy to Clipboard</button>
+        <button class="btn btn-secondary" id="refreshBtn">Refresh</button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>📨 Recent Messages</h2>
+      <div id="messagesList">
+        <p style="color: #666;">No messages yet. Open chat.zalo.me to start receiving messages.</p>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    async function loadCredentials() {
+      const { zaloCredentials } = await chrome.storage.local.get(['zaloCredentials']);
+      const pre = document.getElementById('credentialsJson');
+      
+      if (zaloCredentials) {
+        // Hide sensitive data partially
+        const display = { ...zaloCredentials };
+        if (display.secretKey) {
+          display.secretKey = display.secretKey.substring(0, 10) + '...';
+        }
+        pre.textContent = JSON.stringify(display, null, 2);
+      } else {
+        pre.textContent = 'No credentials found. Click "Extract Credentials" in the popup.';
+      }
+    }
+    
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const { zaloCredentials } = await chrome.storage.local.get(['zaloCredentials']);
+      if (zaloCredentials) {
+        await navigator.clipboard.writeText(JSON.stringify(zaloCredentials, null, 2));
+        alert('Copied!');
+      }
+    });
+    
+    document.getElementById('refreshBtn').addEventListener('click', loadCredentials);
+    
+    loadCredentials();
+  </script>
+</body>
+</html>
