@@ -1,59 +1,37 @@
 # Session Context - Zalo Extension Project
 
-## 🕒 Last Update: 2026-01-07 (Quota reached)
+## 🕒 Last Update: 2026-01-07 (Quota exhausted)
 
-### ✅ Completed Today
-- Finished variable renaming for 30+ API files (list in ISSUE.md)
-- Targeted `add*/delete*/create*/edit*` APIs
-- Updated ISSUE.md with progress snapshot
-- Logged next tasks due to quota exhaustion
+### ✅ Completed
+- Deobfuscation (libs + credentials + nodes) finished; code pushed to GitHub (`Hafointosher/zalo`).
+- ISSUE.md and EXTENSION_PLAN.md describe scope, progress, and extension architecture.
+- Variable renaming reached ~50% of `libs/apis` (see ISSUE.md table).
 
-### ❗ Current Blocker
-> **Model quota exceeded (429)** while renaming `getCatalogList.js`. Resume once quota resets (~4h from last attempt).
+### ⛔ Blocker
+- Rename automation paused by 429 quota limit (Claude). Need to resume when quota resets to continue Phase 2.
 
-### 🔄 Resume Checklist (after quota refresh)
-1. Continue renaming starting from:
-   - `getCatalogList.js`
-   - `getContext.js`
-   - `getFriendBoardList.js`
-   - Remaining `get*.js`, `update*.js`
-   - `libs/utils.js`, `libs/zalo.js`
-   - `nodes/ZaloUser/*.js`
+### 📌 Immediate Next Steps
+1. When quota resets:
+   - Resume renaming from `libs/apis/getCatalogList.js`, `getContext.js`, `getFriendBoardList.js`, then the remaining `get*/update*` files.
+   - After APIs, rename `libs/utils.js`, `libs/zalo.js`, and `nodes/ZaloUser/*.js`.
+2. No-quota local tasks (can do now):
+   - Draft extension boilerplate (Manifest V3, popup skeleton).
+   - Write automation script (Node/Babel) to enforce naming conventions for remaining files.
+   - Prepare TypeScript typings by analyzing zca-js models.
 
-2. After renaming ~80% of APIs, move to extension boilerplate:
-   - Fork structure from `ZaloDataExtractor`
-   - Create Manifest V3 for "Zalo Tools"
-   - Setup popup UI skeleton
-
-3. Port zca-js core modules to browser environment (use `zca-js` repo)
-
-### 📦 Key Files to Inspect Next
-- `libs/apis/getCatalogList.js`
-- `libs/apis/getContext.js`
-- `libs/apis/getFriendBoardList.js`
-- `libs/utils.js`
-- `libs/zalo.js`
-
-### 🔁 Commands (when resuming)
+### 🔧 Commands for later
 ```bash
 cd C:\Users\Hafointosher\Desktop\n8n-zalo-deobfuscated
-# Check git status before modifications
+# to check status
 git status
-# Use Run Task or rename manually per file
-```
-
-### 🧠 Naming Rules Reminder
-```javascript
-serviceUrls → appContext → api    // factory parameters
-encryptedParams, requestParams
-threadId, threadType, isGroupThread
-userId, groupId, message, response
+# run prettier if needed
+npx prettier --write "libs/**/*.js"
 ```
 
 ### 🔗 References
-- `ISSUE.md` – latest progress summary
-- `EXTENSION_PLAN.md` – extension architecture
-- `zca-js` – clean TypeScript source
+- ISSUE.md (progress log) – synced to GitHub issue #1.
+- EXTENSION_PLAN.md – detailed extension design.
+- zca-js repo – canonical TypeScript source.
 
 ---
-*Update this file at the end of each session to capture context when switching threads or waiting for quota.*
+*Update this file whenever state changes so the next session can resume immediately.*
