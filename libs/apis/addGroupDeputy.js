@@ -2,19 +2,19 @@
   (exports.addGroupDeputyFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.addGroupDeputyFactory = (0, utils_js_1.apiFactory)()((r, a, o) => {
-  let i = o.makeURL(r.zpwServiceMap.group[0] + "/api/group/admins/add");
-  return async function (r, e) {
-    var e = {
-        grid: e,
-        members: (r = Array.isArray(r) ? r : [r]),
-        imei: a.imei,
+exports.addGroupDeputyFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.group[0] + "/api/group/admins/add");
+  return async function (memberId, groupId) {
+    var requestParams = {
+        grid: groupId,
+        members: (memberId = Array.isArray(memberId) ? memberId : [memberId]),
+        imei: appContext.imei,
       },
-      r = o.encodeAES(JSON.stringify(e));
-    if (r)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await o.request(o.makeURL(i, { params: r }), { method: "GET" })),
-        o.resolve(e)
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

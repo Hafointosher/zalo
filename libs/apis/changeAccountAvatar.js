@@ -1,7 +1,7 @@
 var __importDefault =
   (this && this.__importDefault) ||
-  function (e) {
-    return e && e.__esModule ? e : { default: e };
+  function (mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
   };
 (Object.defineProperty(exports, "__esModule", { value: !0 }),
   (exports.changeAccountAvatarFactory = void 0));
@@ -9,41 +9,41 @@ let form_data_1 = __importDefault(require("form-data")),
   node_fs_1 = __importDefault(require("node:fs")),
   ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.changeAccountAvatarFactory = (0, utils_js_1.apiFactory)()((e, i, o) => {
-  let s = o.makeURL(e.zpwServiceMap.file[0] + "/api/profile/upavatar");
-  return async function (e) {
-    var t = "string" == typeof e,
-      a = t ? await (0, utils_js_1.getImageMetaData)(i, e) : e.metadata,
-      r = a.totalSize || 0,
-      a = {
+exports.changeAccountAvatarFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.file[0] + "/api/profile/upavatar");
+  return async function (avatarPath) {
+    var isString = "string" == typeof avatarPath,
+      metadata = isString ? await (0, utils_js_1.getImageMetaData)(appContext, avatarPath) : avatarPath.metadata,
+      totalSize = metadata.totalSize || 0,
+      requestParams = {
         avatarSize: 120,
-        clientId: String(i.uid + (0, utils_js_1.formatTime)("%H:%M %d/%m/%Y")),
-        language: i.language,
+        clientId: String(appContext.uid + (0, utils_js_1.formatTime)("%H:%M %d/%m/%Y")),
+        language: appContext.language,
         metaData: JSON.stringify({
-          origin: { width: a.width || 1080, height: a.height || 1080 },
+          origin: { width: metadata.width || 1080, height: metadata.height || 1080 },
           processed: {
-            width: a.width || 1080,
-            height: a.height || 1080,
-            size: r,
+            width: metadata.width || 1080,
+            height: metadata.height || 1080,
+            size: totalSize,
           },
         }),
       },
-      r = t ? node_fs_1.default.readFileSync(e) : e.data,
-      t = new form_data_1.default(),
-      e =
-        (t.append("fileContent", r, {
+      avatarData = isString ? node_fs_1.default.readFileSync(avatarPath) : avatarPath.data,
+      formData = new form_data_1.default(),
+      encryptedParams =
+        (formData.append("fileContent", avatarData, {
           filename: "blob",
           contentType: "image/jpeg",
         }),
-        o.encodeAES(JSON.stringify(a)));
-    if (e)
+        api.encodeAES(JSON.stringify(requestParams)));
+    if (encryptedParams)
       return (
-        (r = await o.request(o.makeURL(s, { params: e }), {
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), {
           method: "POST",
-          headers: t.getHeaders(),
-          body: t.getBuffer(),
+          headers: formData.getHeaders(),
+          body: formData.getBuffer(),
         })),
-        o.resolve(r)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

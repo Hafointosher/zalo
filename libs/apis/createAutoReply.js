@@ -2,29 +2,29 @@
   (exports.createAutoReplyFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.createAutoReplyFactory = (0, utils_js_1.apiFactory)()((e, a, t) => {
-  let o = t.makeURL(e.zpwServiceMap.auto_reply[0] + "/api/autoreply/create");
-  return async function (e) {
-    var r = Array.isArray(e.uids) ? e.uids : [e.uids],
-      r = 2 === e.scope || 3 === e.scope ? r : [],
-      e = {
-        cliLang: a.language,
-        enable: e.isEnable,
-        content: e.content,
-        startTime: e.startTime,
-        endTime: e.endTime,
+exports.createAutoReplyFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.auto_reply[0] + "/api/autoreply/create");
+  return async function (options) {
+    var requestParams = Array.isArray(options.uids) ? options.uids : [options.uids],
+      requestParams = 2 === options.scope || 3 === options.scope ? requestParams : [],
+      message = {
+        cliLang: appContext.language,
+        enable: options.isEnable,
+        content: options.content,
+        startTime: options.startTime,
+        endTime: options.endTime,
         recurrence: ["RRULE:FREQ=DAILY;"],
-        scope: e.scope,
-        uids: r,
+        scope: options.scope,
+        uids: requestParams,
       },
-      r = t.encodeAES(JSON.stringify(e));
-    if (r)
+      encryptedParams = api.encodeAES(JSON.stringify(message));
+    if (encryptedParams)
       return (
-        (e = await t.request(o, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        t.resolve(e)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

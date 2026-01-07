@@ -3,35 +3,35 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.addUnreadMarkFactory = (0, utils_js_1.apiFactory)()((r, t, o) => {
-  let i = o.makeURL(
-    r.zpwServiceMap.conversation[0] + "/api/conv/addUnreadMark",
+exports.addUnreadMarkFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.conversation[0] + "/api/conv/addUnreadMark",
   );
-  return async function (r, e = index_js_1.ThreadType.User) {
-    var a = Date.now(),
-      s = a.toString(),
-      e = e === index_js_1.ThreadType.Group,
-      r = {
+  return async function (threadId, threadType = index_js_1.ThreadType.User) {
+    var timestamp = Date.now(),
+      cliMsgId = timestamp.toString(),
+      isGroup = threadType === index_js_1.ThreadType.Group,
+      requestParams = {
         param: JSON.stringify({
-          [e ? "convsGroup" : "convsUser"]: [
-            { id: r, cliMsgId: s, fromUid: "0", ts: a },
+          [isGroup ? "convsGroup" : "convsUser"]: [
+            { id: threadId, cliMsgId: cliMsgId, fromUid: "0", ts: timestamp },
           ],
-          [e ? "convsUser" : "convsGroup"]: [],
-          imei: t.imei,
+          [isGroup ? "convsUser" : "convsGroup"]: [],
+          imei: appContext.imei,
         }),
       },
-      s = o.encodeAES(JSON.stringify(r));
-    if (s)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (a = await o.request(i, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: s }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        o.resolve(a, (r) => {
-          var e = r.data;
-          return "string" == typeof e.data
-            ? { data: JSON.parse(e.data), status: e.status }
-            : r.data;
+        api.resolve(response, (result) => {
+          var data = result.data;
+          return "string" == typeof data.data
+            ? { data: JSON.parse(data.data), status: data.status }
+            : result.data;
         })
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");

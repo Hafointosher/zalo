@@ -2,26 +2,26 @@
   (exports.getCatalogListFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getCatalogListFactory = (0, utils_js_1.apiFactory)()((r, t, a) => {
-  let e = a.makeURL(
-    r.zpwServiceMap.catalog[0] + "/api/prodcatalog/catalog/list",
+exports.getCatalogListFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.catalog[0] + "/api/prodcatalog/catalog/list",
   );
-  return async function (r) {
-    var r = {
+  return async function (options) {
+    var requestParams = {
         version_list_catalog: 0,
-        limit: null != (t = null == r ? void 0 : r.limit) ? t : 20,
+        limit: null != (appContext = null == options ? void 0 : options.limit) ? appContext : 20,
         last_product_id:
-          null != (t = null == r ? void 0 : r.lastProductId) ? t : -1,
-        page: null != (t = null == r ? void 0 : r.page) ? t : 0,
+          null != (appContext = null == options ? void 0 : options.lastProductId) ? appContext : -1,
+        page: null != (appContext = null == options ? void 0 : options.page) ? appContext : 0,
       },
-      t = a.encodeAES(JSON.stringify(r));
-    if (t)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (r = await a.request(e, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: t }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        a.resolve(r)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

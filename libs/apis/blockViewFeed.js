@@ -2,18 +2,18 @@
   (exports.blockViewFeedFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.blockViewFeedFactory = (0, utils_js_1.apiFactory)()((e, i, o) => {
-  let a = o.makeURL(e.zpwServiceMap.friend[0] + "/api/friend/feed/block");
-  return async function (e, r) {
-    var r = { fid: r, isBlockFeed: e ? 1 : 0, imei: i.imei },
-      e = o.encodeAES(JSON.stringify(r));
-    if (e)
+exports.blockViewFeedFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.friend[0] + "/api/friend/feed/block");
+  return async function (isBlock, userId) {
+    var requestParams = { fid: userId, isBlockFeed: isBlock ? 1 : 0, imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (r = await o.request(a, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: e }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        o.resolve(r)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

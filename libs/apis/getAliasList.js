@@ -2,15 +2,15 @@
   (exports.getAliasListFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getAliasListFactory = (0, utils_js_1.apiFactory)()((r, i, a) => {
-  let t = a.makeURL(r.zpwServiceMap.alias[0] + "/api/alias/list");
-  return async function (r = 100, e = 1) {
-    var e = { page: e, count: r, imei: i.imei },
-      r = a.encodeAES(JSON.stringify(e));
-    if (r)
+exports.getAliasListFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.alias[0] + "/api/alias/list");
+  return async function (count = 100, page = 1) {
+    var requestParams = { page: page, count: count, imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await a.request(a.makeURL(t, { params: r }), { method: "GET" })),
-        a.resolve(e)
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

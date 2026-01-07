@@ -3,16 +3,16 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
 exports.addGroupBlockedMemberFactory = (0, utils_js_1.apiFactory)()(
-  (r, e, o) => {
-    let a = o.makeURL(r.zpwServiceMap.group[0] + "/api/group/blockedmems/add");
-    return async function (r, e) {
-      Array.isArray(r) || (r = [r]);
-      e = o.encodeAES(JSON.stringify({ grid: e, members: r }));
-      if (e)
-        return (
-          (r = await o.request(o.makeURL(a, { params: e }), { method: "GET" })),
-          o.resolve(r)
-        );
+  (serviceUrls, appContext, api) => {
+    let endpoint = api.makeURL(serviceUrls.zpwServiceMap.group[0] + "/api/group/blockedmems/add");
+    return async function (memberId, groupId) {
+      Array.isArray(memberId) || (memberId = [memberId]);
+      let requestParams = { grid: groupId, members: memberId };
+      let encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+      if (encryptedParams) {
+        let response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" });
+        return api.resolve(response);
+      }
       throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
     };
   },

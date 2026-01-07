@@ -3,54 +3,54 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.editReminderFactory = (0, utils_js_1.apiFactory)()((e, a, o) => {
-  let p = {
-    [index_js_1.ThreadType.User]: o.makeURL(
-      e.zpwServiceMap.group_board[0] + "/api/board/oneone/update",
+exports.editReminderFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = {
+    [index_js_1.ThreadType.User]: api.makeURL(
+      serviceUrls.zpwServiceMap.group_board[0] + "/api/board/oneone/update",
     ),
-    [index_js_1.ThreadType.Group]: o.makeURL(
-      e.zpwServiceMap.group_board[0] + "/api/board/topic/updatev2",
+    [index_js_1.ThreadType.Group]: api.makeURL(
+      serviceUrls.zpwServiceMap.group_board[0] + "/api/board/topic/updatev2",
     ),
   };
-  return async function (e, r, i = index_js_1.ThreadType.User) {
-    var t,
-      r =
-        i === index_js_1.ThreadType.User
+  return async function (reminder, groupId, threadType = index_js_1.ThreadType.User) {
+    var temp,
+      requestParams =
+        threadType === index_js_1.ThreadType.User
           ? {
               objectData: JSON.stringify({
-                toUid: r,
+                toUid: groupId,
                 type: 0,
                 color: -16777216,
-                emoji: null != (t = e.emoji) ? t : "",
-                startTime: null != (t = e.startTime) ? t : Date.now(),
+                emoji: null != (temp = reminder.emoji) ? temp : "",
+                startTime: null != (temp = reminder.startTime) ? temp : Date.now(),
                 duration: -1,
-                params: { title: e.title },
+                params: { title: reminder.title },
                 needPin: !1,
-                reminderId: e.topicId,
-                repeat: null != (t = e.repeat) ? t : 0,
+                reminderId: reminder.topicId,
+                repeat: null != (temp = reminder.repeat) ? temp : 0,
               }),
             }
           : {
-              grid: r,
+              grid: groupId,
               type: 0,
               color: -16777216,
-              emoji: null != (t = e.emoji) ? t : "",
-              startTime: null != (r = e.startTime) ? r : Date.now(),
+              emoji: null != (temp = reminder.emoji) ? temp : "",
+              startTime: null != (temp = reminder.startTime) ? temp : Date.now(),
               duration: -1,
-              params: JSON.stringify({ title: e.title }),
-              topicId: e.topicId,
-              repeat: null != (t = e.repeat) ? t : 0,
-              imei: a.imei,
+              params: JSON.stringify({ title: reminder.title }),
+              topicId: reminder.topicId,
+              repeat: null != (temp = reminder.repeat) ? temp : 0,
+              imei: appContext.imei,
               pinAct: 2,
             },
-      e = o.encodeAES(JSON.stringify(r));
-    if (e)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (t = await o.request(p[i], {
+        (response = await api.request(endpoint[threadType], {
           method: "POST",
-          body: new URLSearchParams({ params: e }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        o.resolve(t)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

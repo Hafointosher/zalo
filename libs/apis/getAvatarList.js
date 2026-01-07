@@ -2,15 +2,15 @@
   (exports.getAvatarListFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getAvatarListFactory = (0, utils_js_1.apiFactory)()((r, a, t) => {
-  let i = t.makeURL(r.zpwServiceMap.profile[0] + "/api/social/avatar-list");
-  return async function (r = 50, e = 1) {
-    var e = { page: e, albumId: "0", count: r, imei: a.imei },
-      r = t.encodeAES(JSON.stringify(e));
-    if (r)
+exports.getAvatarListFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.profile[0] + "/api/social/avatar-list");
+  return async function (count = 50, page = 1) {
+    var requestParams = { page: page, albumId: "0", count: count, imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await t.request(t.makeURL(i, { params: r }), { method: "GET" })),
-        t.resolve(e)
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

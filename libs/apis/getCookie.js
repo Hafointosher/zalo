@@ -2,8 +2,8 @@
   (exports.getCookieFactory = void 0));
 let utils_js_1 = require("../utils.js");
 exports.getCookieFactory = (0, utils_js_1.apiFactory)()(
-  (e, o) =>
+  (serviceUrls, appContext) =>
     function () {
-      return o.cookie;
+      return appContext.cookie;
     },
 );

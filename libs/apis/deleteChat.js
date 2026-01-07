@@ -3,31 +3,31 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.deleteChatFactory = (0, utils_js_1.apiFactory)()((e, a, t) => {
-  let s = {
-    [index_js_1.ThreadType.User]: t.makeURL(
-      e.zpwServiceMap.chat[0] + "/api/message/deleteconver",
+exports.deleteChatFactory = (0, utils_js_1.apiFactory)()((appContext, api, endpoint) => {
+  let serviceUrls = {
+    [index_js_1.ThreadType.User]: endpoint.makeURL(
+      appContext.zpwServiceMap.chat[0] + "/api/message/deleteconver",
       { nretry: 0 },
     ),
-    [index_js_1.ThreadType.Group]: t.makeURL(
-      e.zpwServiceMap.group[0] + "/api/group/deleteconver",
+    [index_js_1.ThreadType.Group]: endpoint.makeURL(
+      appContext.zpwServiceMap.group[0] + "/api/group/deleteconver",
       { nretry: 0 },
     ),
   };
-  return async function (e, r, i = index_js_1.ThreadType.User) {
-    var o = Date.now().toString(),
-      r =
-        i === index_js_1.ThreadType.User
-          ? { toid: r, cliMsgId: o, conver: e, onlyMe: 1, imei: a.imei }
-          : { grid: r, cliMsgId: o, conver: e, onlyMe: 1, imei: a.imei },
-      o = t.encodeAES(JSON.stringify(r));
-    if (o)
+  return async function (conver, threadId, threadType = index_js_1.ThreadType.User) {
+    var cliMsgId = Date.now().toString(),
+      requestParams =
+        threadType === index_js_1.ThreadType.User
+          ? { toid: threadId, cliMsgId: cliMsgId, conver: conver, onlyMe: 1, imei: api.imei }
+          : { grid: threadId, cliMsgId: cliMsgId, conver: conver, onlyMe: 1, imei: api.imei },
+      encryptedParams = endpoint.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await t.request(s[i], {
+        (response = await endpoint.request(serviceUrls[threadType], {
           method: "POST",
-          body: new URLSearchParams({ params: o }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        t.resolve(e)
+        endpoint.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

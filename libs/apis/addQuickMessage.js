@@ -2,48 +2,48 @@
   (exports.addQuickMessageFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.addQuickMessageFactory = (0, utils_js_1.apiFactory)()((o, s, l) => {
-  let d = l.makeURL(
-    o.zpwServiceMap.quick_message[0] + "/api/quickmessage/create",
+exports.addQuickMessageFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.quick_message[0] + "/api/quickmessage/create",
   );
-  return async function (e) {
-    var r = e.media ? 1 : 0,
-      i = {
-        keyword: e.keyword,
-        message: { title: e.title, params: "" },
-        type: r,
-        imei: s.imei,
+  return async function (options) {
+    var mediaType = options.media ? 1 : 0,
+      requestParams = {
+        keyword: options.keyword,
+        message: { title: options.title, params: "" },
+        type: mediaType,
+        imei: appContext.imei,
       };
-    if (1 == r) {
-      if (!e.media)
+    if (1 == mediaType) {
+      if (!options.media)
         throw new ZaloApiError_js_1.ZaloApiError("Media is required");
-      var r = await o.uploadProductPhoto({ file: e.media }),
-        e = r.photoId,
-        a = r.thumbUrl,
-        t = r.normalUrl,
-        r = r.hdUrl;
-      i.media = {
+      var uploadResult = await serviceUrls.uploadProductPhoto({ file: options.media }),
+        photoId = uploadResult.photoId,
+        thumbUrl = uploadResult.thumbUrl,
+        normalUrl = uploadResult.normalUrl,
+        hdUrl = uploadResult.hdUrl;
+      requestParams.media = {
         items: [
           {
             type: 0,
-            photoId: e,
+            photoId: photoId,
             title: "",
             width: "",
             height: "",
-            previewThumb: a,
-            rawUrl: t || r,
-            thumbUrl: a,
-            normalUrl: t || r,
-            hdUrl: r || t,
+            previewThumb: thumbUrl,
+            rawUrl: normalUrl || hdUrl,
+            thumbUrl: thumbUrl,
+            normalUrl: normalUrl || hdUrl,
+            hdUrl: hdUrl || normalUrl,
           },
         ],
       };
     }
-    e = l.encodeAES(JSON.stringify(i));
-    if (e)
+    var encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (a = await l.request(l.makeURL(d, { params: e }), { method: "GET" })),
-        l.resolve(a)
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

@@ -3,44 +3,44 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
 exports.createProductCatalogFactory = (0, utils_js_1.apiFactory)()(
-  (a, r, t) => {
-    let i = t.makeURL(
-      a.zpwServiceMap.catalog[0] + "/api/prodcatalog/product/create",
+  (appContext, serviceUrls, api) => {
+    let endpoint = api.makeURL(
+      appContext.zpwServiceMap.catalog[0] + "/api/prodcatalog/product/create",
     );
-    return async function (r) {
-      var e = r.product_photos || [];
-      if (r.files && 0 == r.files.length) {
-        if (5 < r.files.length)
+    return async function (product) {
+      var product_photos = product.product_photos || [];
+      if (product.files && 0 == product.files.length) {
+        if (5 < product.files.length)
           throw new ZaloApiError_js_1.ZaloApiError(
             "Maximum 5 media files are allowed",
           );
-        for (var o of r.files) {
-          ((o = await a.uploadProductPhoto({ file: o })),
-            (o = o.normalUrl || o.hdUrl));
-          e.push(o);
+        for (var uploadResult of product.files) {
+          ((uploadResult = await appContext.uploadProductPhoto({ file: uploadResult })),
+            (uploadResult = uploadResult.normalUrl || uploadResult.hdUrl));
+          product_photos.push(uploadResult);
         }
       }
-      if (5 < e.length)
+      if (5 < product_photos.length)
         throw new ZaloApiError_js_1.ZaloApiError(
           "Maximum 5 media files are allowed",
         );
-      var r = {
-          product_name: r.productName,
-          price: r.price,
-          description: r.description,
-          product_photos: e,
-          catalog_id: r.catalogId,
+      var requestParams = {
+          product_name: product.productName,
+          price: product.price,
+          description: product.description,
+          product_photos: product_photos,
+          catalog_id: product.catalogId,
           currency_unit: "₫",
           create_time: Date.now(),
         },
-        r = t.encodeAES(JSON.stringify(r));
-      if (r)
+        encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+      if (encryptedParams)
         return (
-          (r = await t.request(i, {
+          (response = await api.request(endpoint, {
             method: "POST",
-            body: new URLSearchParams({ params: r }),
+            body: new URLSearchParams({ params: encryptedParams }),
           })),
-          t.resolve(r)
+          api.resolve(response)
         );
       throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
     };

@@ -2,19 +2,19 @@
   (exports.getBizAccountFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getBizAccountFactory = (0, utils_js_1.apiFactory)()((r, e, o) => {
-  let t = o.makeURL(
-    r.zpwServiceMap.profile[0] + "/api/social/friend/get-bizacc",
+exports.getBizAccountFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.profile[0] + "/api/social/friend/get-bizacc",
   );
-  return async function (r) {
-    var r = o.encodeAES(JSON.stringify({ fid: r }));
-    if (r)
+  return async function (requestParams) {
+    var encryptedParams = api.encodeAES(JSON.stringify({ fid: requestParams }));
+    if (encryptedParams)
       return (
-        (r = await o.request(t, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        o.resolve(r)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };
