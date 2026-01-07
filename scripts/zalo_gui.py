@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
 """GUI automation tool for processing n8n-nodes-zalo-user-v3.
 
-Capabilities
-============
-- Select source dist folder and output workspace
-- Install required npm devDeps (prettier, synchrony) automatically
-- Copy libs/credentials/nodes with optional incremental mode
-- Run Prettier on minified code
-- Run synchrony deobfuscation in parallel worker threads with retries
-- Apply rename heuristics (regex driven) or custom mapping file
-- Export run summary/log to JSON for later analysis
-- Full pipeline button executes everything sequentially without quota usage
-
-Usage
-======
-python scripts/zalo_gui.py
+The tool now auto-installs required npm dev dependencies (prettier, synchrony)
+whenever the output workspace does not yet contain them. Users only need to
+select source/output folders and press "Run Full Pipeline".
 """
 from __future__ import annotations
 
@@ -48,13 +37,14 @@ SYNCHRONY_GLOBS = [
 RENAME_PATTERNS = [
     (r"\b([A-Za-z_]\w*)\s*=\s*\(0,\s*utils_js_1\.apiFactory\)\(\)\(", "serviceUrls = (0, utils_js_1.apiFactory)()("),
     (r"\b([A-Za-z_]\w*)\s*=\s*serviceUrls\b", "serviceUrls"),
-    (r"\b([A-Za-z_]\w*)\s*=\s*([A-Za-z_]\w*)\.settings\.features", "appContext = serviceUrls.settings.features"),
 ]
 
 SUMMARY_FILE = "automation_summary.json"
+REQUIRED_TOOLS = ["npm", "npx"]
+REQUIRED_DEPS = ["prettier", "synchrony"]
 
 
-def log_time() -> str:
+def timestamp() -> str:
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
 
@@ -77,7 +67,7 @@ class ZaloToolGUI:
         self._build_ui()
         self._poll_log()
 
-    # --- UI Build ---
+    # UI construction
     def _build_ui(self) -> None:
         frm = tk.Frame(self.root, padx=10, pady=10)
         frm.pack(fill=tk.BOTH, expand=True)
@@ -93,29 +83,18 @@ class ZaloToolGUI:
         tk.Label(frm, text="Synchrony workers").grid(row=2, column=0, sticky="w")
         tk.Spinbox(frm, from_=1, to=16, textvariable=self.max_workers_var, width=5).grid(row=2, column=1, sticky="w")
 
-        button_row1 = tk.Frame(frm)
-        button_row1.grid(row=3, column=0, columnspan=3, pady=5, sticky="ew")
-        for idx, (label, cmd) in enumerate([
-            ("Install deps", self.install_deps),
-            ("Copy", self.copy_files),
-            ("Prettier", self.run_prettier),
-            ("Synchrony", self.run_synchrony),
-            ("Rename", self.run_rename),
-        ]):
-            tk.Button(button_row1, text=label, width=14, command=cmd).grid(row=0, column=idx, padx=4)
+        button_row = tk.Frame(frm)
+        button_row.grid(row=3, column=0, columnspan=3, pady=8, sticky="ew")
+        tk.Button(button_row, text="Run Full Pipeline", width=20, command=self.run_all_steps).grid(row=0, column=0, padx=4)
+        tk.Button(button_row, text="Export Summary", width=16, command=self.export_summary).grid(row=0, column=1, padx=4)
 
-        button_row2 = tk.Frame(frm)
-        button_row2.grid(row=4, column=0, columnspan=3, pady=5, sticky="ew")
-        tk.Button(button_row2, text="Run Full Pipeline", width=20, command=self.run_all_steps).grid(row=0, column=0, padx=4)
-        tk.Button(button_row2, text="Export Summary", width=16, command=self.export_summary).grid(row=0, column=1, padx=4)
-
-        tk.Label(frm, text="Log").grid(row=5, column=0, sticky="w")
-        self.log_box = scrolledtext.ScrolledText(frm, height=18, width=100, state=tk.DISABLED)
-        self.log_box.grid(row=6, column=0, columnspan=3, pady=5, sticky="nsew")
-        frm.grid_rowconfigure(6, weight=1)
+        tk.Label(frm, text="Log").grid(row=4, column=0, sticky="w")
+        self.log_box = scrolledtext.ScrolledText(frm, height=20, width=100, state=tk.DISABLED)
+        self.log_box.grid(row=5, column=0, columnspan=3, pady=5, sticky="nsew")
+        frm.grid_rowconfigure(5, weight=1)
         frm.grid_columnconfigure(1, weight=1)
 
-    # --- UI actions ---
+    # UI helpers
     def _choose_source(self) -> None:
         path = filedialog.askdirectory()
         if path:
@@ -127,16 +106,15 @@ class ZaloToolGUI:
             self.output_var.set(path)
 
     def _append_log(self, text: str) -> None:
-        timestamp = log_time()
         self.log_box.configure(state=tk.NORMAL)
-        self.log_box.insert(tk.END, f"[{timestamp}] {text}\n")
+        self.log_box.insert(tk.END, f"[{timestamp()}] {text}\n")
         self.log_box.see(tk.END)
         self.log_box.configure(state=tk.DISABLED)
 
     def _poll_log(self) -> None:
         while not self.queue.empty():
             self._append_log(self.queue.get())
-        self.root.after(250, self._poll_log)
+        self.root.after(200, self._poll_log)
 
     def _validate_paths(self) -> Optional[Tuple[Path, Path]]:
         source = Path(self.source_var.get())
@@ -162,25 +140,11 @@ class ZaloToolGUI:
                 self.queue.put(f"ERROR during {label}: {exc}")
         threading.Thread(target=worker, daemon=True).start()
 
-    # --- Buttons ---
-    def install_deps(self, *_):
-        self._run_threaded("npm install", self._install_impl)
-
-    def copy_files(self, *_):
-        self._run_threaded("Copy", self._copy_impl)
-
-    def run_prettier(self, *_):
-        self._run_threaded("Prettier", self._prettier_impl)
-
-    def run_synchrony(self, *_):
-        self._run_threaded("Synchrony", self._synchrony_impl)
-
-    def run_rename(self, *_):
-        self._run_threaded("Rename", self._rename_impl)
-
+    # Button actions
     def run_all_steps(self, *_):
         def pipeline(source: Path, output: Path):
-            self._install_impl(source, output)
+            self._ensure_tools()
+            self._ensure_deps(output)
             self._copy_impl(source, output)
             self._prettier_impl(source, output)
             self._synchrony_impl(source, output)
@@ -192,18 +156,30 @@ class ZaloToolGUI:
         if not output:
             messagebox.showerror("Missing output", "Set output directory first")
             return
-        path = output / SUMMARY_FILE
         data = [result.__dict__ for result in self.summary]
+        path = output / SUMMARY_FILE
         path.write_text(json.dumps(data, indent=2), encoding="utf-8")
         self.queue.put(f"Summary exported to {path}")
 
-    # --- Implementations ---
-    def _install_impl(self, _source: Path, output: Path) -> None:
+    # Core steps
+    def _ensure_tools(self) -> None:
+        for tool in REQUIRED_TOOLS:
+            if shutil.which(tool) is None:
+                raise RuntimeError(f"Required tool '{tool}' not found in PATH")
+
+    def _ensure_deps(self, output: Path) -> None:
         pkg = output / "package.json"
         if not pkg.exists():
-            pkg.write_text(json.dumps({"name": "zalo-local", "version": "1.0.0"}, indent=2), encoding="utf-8")
-        cmd = ["npm", "install", "--save-dev", "prettier", "synchrony"]
-        self._subprocess(cmd, output, "npm install")
+            pkg.write_text(json.dumps({"name": "zalo-deobf", "version": "1.0.0"}, indent=2), encoding="utf-8")
+        node_modules = output / "node_modules"
+        needs_install = any(not (node_modules / dep).exists() for dep in [])
+        # Force install if prettier binary missing
+        prettier_bin = output / "node_modules/.bin/prettier"
+        synchrony_bin = output / "node_modules/.bin/synchrony"
+        if not prettier_bin.exists() or not synchrony_bin.exists():
+            cmd = ["npm", "install", "--save-dev", *REQUIRED_DEPS]
+            result = self._subprocess(cmd, output, "npm install")
+            self.summary.append(result)
 
     def _copy_impl(self, source: Path, output: Path) -> None:
         for key, rel in DEFAULT_REL_DIRS.items():
@@ -213,7 +189,7 @@ class ZaloToolGUI:
                 shutil.rmtree(dst)
             shutil.copytree(src, dst)
             self.queue.put(f"Copied {src} -> {dst}")
-        self.summary.append(TaskResult("copy", True, "libs+nodes copied"))
+        self.summary.append(TaskResult("copy", True, "Copied libs/credentials/nodes"))
 
     def _prettier_impl(self, _source: Path, output: Path) -> None:
         files = []
@@ -224,7 +200,7 @@ class ZaloToolGUI:
             return
         cmd = ["npx", "prettier", "--write", *files]
         result = self._subprocess(cmd, output, "prettier")
-        self.summary.append(TaskResult("prettier", result.success, result.details))
+        self.summary.append(result)
 
     def _synchrony_impl(self, _source: Path, output: Path) -> None:
         targets = [str(file) for pattern in SYNCHRONY_GLOBS for file in output.glob(pattern)]
@@ -232,21 +208,19 @@ class ZaloToolGUI:
             self.queue.put("No synchrony targets")
             return
         max_workers = max(1, min(self.max_workers_var.get(), 16))
-        results: List[TaskResult] = []
 
         def worker(path: str) -> TaskResult:
             cmd = ["npx", "synchrony", path, "-o", path, "--rename"]
             return self._subprocess(cmd, output, f"synchrony {Path(path).name}")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for result in executor.map(worker, targets):
-                results.append(result)
-        success_count = sum(1 for r in results if r.success)
-        self.summary.append(TaskResult("synchrony", success_count == len(results), f"{success_count}/{len(results)} files"))
+            results = list(executor.map(worker, targets))
+        success = sum(1 for r in results if r.success)
+        self.summary.append(TaskResult("synchrony", success == len(targets), f"{success}/{len(targets)}"))
 
     def _rename_impl(self, _source: Path, output: Path) -> None:
         replacements = [(re.compile(pattern), repl) for pattern, repl in RENAME_PATTERNS]
-        modified = 0
+        count = 0
         for file in output.glob("libs/apis/*.js"):
             text = file.read_text(encoding="utf-8")
             original = text
@@ -254,12 +228,12 @@ class ZaloToolGUI:
                 text = pattern.sub(repl, text)
             if text != original:
                 file.write_text(text, encoding="utf-8")
-                modified += 1
-        msg = f"Heuristics applied to {modified} files"
+                count += 1
+        msg = f"Rename heuristics applied to {count} files"
         self.queue.put(msg)
         self.summary.append(TaskResult("rename", True, msg))
 
-    # --- Helpers ---
+    # helpers
     def _subprocess(self, cmd: List[str], cwd: Path, label: str) -> TaskResult:
         try:
             completed = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True)
@@ -268,7 +242,7 @@ class ZaloToolGUI:
             return TaskResult(label, True, completed.stdout.strip())
         except subprocess.CalledProcessError as exc:
             self.queue.put(f"{label} failed: {exc.stderr.strip()}")
-            return TaskResult(label, False, exc.stderr.strip())
+            raise
 
 
 def main() -> None:
