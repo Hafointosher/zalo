@@ -2,22 +2,22 @@
   (exports.changeGroupNameFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.changeGroupNameFactory = (0, utils_js_1.apiFactory)()((r, o, a) => {
-  let t = a.makeURL(r.zpwServiceMap.group[0] + "/api/group/updateinfo");
-  return async function (r, e) {
-    var e = {
-        grid: e,
-        gname: (r = 0 == r.length ? Date.now().toString() : r),
-        imei: o.imei,
+exports.changeGroupNameFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let apiUrl = api.makeURL(serviceUrls.zpwServiceMap.group[0] + "/api/group/updateinfo");
+  return async function (newName, groupId) {
+    var requestData = {
+        grid: groupId,
+        gname: (newName = 0 == newName.length ? Date.now().toString() : newName),
+        imei: appContext.imei,
       },
-      r = a.encodeAES(JSON.stringify(e));
-    if (r)
+      encryptedParams = api.encodeAES(JSON.stringify(requestData));
+    if (encryptedParams)
       return (
-        (e = await a.request(t, {
+        (response = await api.request(apiUrl, {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        a.resolve(e)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

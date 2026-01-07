@@ -1,227 +1,188 @@
-(Object.defineProperty(exports, "__esModule", { value: !0 }),
+(Object.defineProperty(exports, "__esModule", { value: true }),
   (exports.addReactionFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.addReactionFactory = (0, utils_js_1.apiFactory)()((e, _, c) => {
-  let r = {
-    [index_js_1.ThreadType.User]: c.makeURL(
-      e.zpwServiceMap.reaction[0] + "/api/message/reaction",
+
+exports.addReactionFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  const endpoints = {
+    [index_js_1.ThreadType.User]: api.makeURL(
+      serviceUrls.zpwServiceMap.reaction[0] + "/api/message/reaction",
     ),
-    [index_js_1.ThreadType.Group]: c.makeURL(
-      e.zpwServiceMap.reaction[0] + "/api/group/reaction",
+    [index_js_1.ThreadType.Group]: api.makeURL(
+      serviceUrls.zpwServiceMap.reaction[0] + "/api/group/reaction",
     ),
   };
-  return async function (e, a) {
-    var s = r[a.type];
-    let i, n;
-    if ("object" == typeof e) ((i = e.rType), (n = e.source));
-    else
-      switch (e) {
+
+  return async function addReaction(reaction, message) {
+    const endpoint = endpoints[message.type];
+    let reactionType, reactionSource;
+
+    if ("object" == typeof reaction) {
+      reactionType = reaction.rType;
+      reactionSource = reaction.source;
+    } else {
+      switch (reaction) {
         case index_js_1.Reactions.HAHA:
-          ((i = 0), (n = 6));
-          break;
+          reactionType = 0; reactionSource = 6; break;
         case index_js_1.Reactions.LIKE:
-          ((i = 3), (n = 6));
-          break;
+          reactionType = 3; reactionSource = 6; break;
         case index_js_1.Reactions.HEART:
-          ((i = 5), (n = 6));
-          break;
+          reactionType = 5; reactionSource = 6; break;
         case index_js_1.Reactions.WOW:
-          ((i = 32), (n = 6));
-          break;
+          reactionType = 32; reactionSource = 6; break;
         case index_js_1.Reactions.CRY:
-          ((i = 2), (n = 6));
-          break;
+          reactionType = 2; reactionSource = 6; break;
         case index_js_1.Reactions.ANGRY:
-          ((i = 20), (n = 6));
-          break;
+          reactionType = 20; reactionSource = 6; break;
         case index_js_1.Reactions.KISS:
-          ((i = 8), (n = 6));
-          break;
+          reactionType = 8; reactionSource = 6; break;
         case index_js_1.Reactions.TEARS_OF_JOY:
-          ((i = 7), (n = 6));
-          break;
+          reactionType = 7; reactionSource = 6; break;
         case index_js_1.Reactions.SHIT:
-          ((i = 66), (n = 6));
-          break;
+          reactionType = 66; reactionSource = 6; break;
         case index_js_1.Reactions.ROSE:
-          ((i = 120), (n = 6));
-          break;
+          reactionType = 120; reactionSource = 6; break;
         case index_js_1.Reactions.BROKEN_HEART:
-          ((i = 65), (n = 6));
-          break;
+          reactionType = 65; reactionSource = 6; break;
         case index_js_1.Reactions.DISLIKE:
-          ((i = 4), (n = 6));
-          break;
+          reactionType = 4; reactionSource = 6; break;
         case index_js_1.Reactions.LOVE:
-          ((i = 29), (n = 6));
-          break;
+          reactionType = 29; reactionSource = 6; break;
         case index_js_1.Reactions.CONFUSED:
-          ((i = 51), (n = 6));
-          break;
+          reactionType = 51; reactionSource = 6; break;
         case index_js_1.Reactions.WINK:
-          ((i = 45), (n = 6));
-          break;
+          reactionType = 45; reactionSource = 6; break;
         case index_js_1.Reactions.FADE:
-          ((i = 121), (n = 6));
-          break;
+          reactionType = 121; reactionSource = 6; break;
         case index_js_1.Reactions.SUN:
-          ((i = 67), (n = 6));
-          break;
+          reactionType = 67; reactionSource = 6; break;
         case index_js_1.Reactions.BIRTHDAY:
-          ((i = 126), (n = 6));
-          break;
+          reactionType = 126; reactionSource = 6; break;
         case index_js_1.Reactions.BOMB:
-          ((i = 127), (n = 6));
-          break;
+          reactionType = 127; reactionSource = 6; break;
         case index_js_1.Reactions.OK:
-          ((i = 68), (n = 6));
-          break;
+          reactionType = 68; reactionSource = 6; break;
         case index_js_1.Reactions.PEACE:
-          ((i = 69), (n = 6));
-          break;
+          reactionType = 69; reactionSource = 6; break;
         case index_js_1.Reactions.THANKS:
-          ((i = 70), (n = 6));
-          break;
+          reactionType = 70; reactionSource = 6; break;
         case index_js_1.Reactions.PUNCH:
-          ((i = 71), (n = 6));
-          break;
+          reactionType = 71; reactionSource = 6; break;
         case index_js_1.Reactions.SHARE:
-          ((i = 72), (n = 6));
-          break;
+          reactionType = 72; reactionSource = 6; break;
         case index_js_1.Reactions.PRAY:
-          ((i = 73), (n = 6));
-          break;
+          reactionType = 73; reactionSource = 6; break;
         case index_js_1.Reactions.NO:
-          ((i = 131), (n = 6));
-          break;
+          reactionType = 131; reactionSource = 6; break;
         case index_js_1.Reactions.BAD:
-          ((i = 132), (n = 6));
-          break;
+          reactionType = 132; reactionSource = 6; break;
         case index_js_1.Reactions.LOVE_YOU:
-          ((i = 133), (n = 6));
-          break;
+          reactionType = 133; reactionSource = 6; break;
         case index_js_1.Reactions.SAD:
-          ((i = 1), (n = 6));
-          break;
+          reactionType = 1; reactionSource = 6; break;
         case index_js_1.Reactions.VERY_SAD:
-          ((i = 16), (n = 6));
-          break;
+          reactionType = 16; reactionSource = 6; break;
         case index_js_1.Reactions.COOL:
-          ((i = 21), (n = 6));
-          break;
+          reactionType = 21; reactionSource = 6; break;
         case index_js_1.Reactions.NERD:
-          ((i = 22), (n = 6));
-          break;
+          reactionType = 22; reactionSource = 6; break;
         case index_js_1.Reactions.BIG_SMILE:
-          ((i = 23), (n = 6));
-          break;
+          reactionType = 23; reactionSource = 6; break;
         case index_js_1.Reactions.SUNGLASSES:
-          ((i = 26), (n = 6));
-          break;
+          reactionType = 26; reactionSource = 6; break;
         case index_js_1.Reactions.NEUTRAL:
-          ((i = 30), (n = 6));
-          break;
+          reactionType = 30; reactionSource = 6; break;
         case index_js_1.Reactions.SAD_FACE:
-          ((i = 35), (n = 6));
-          break;
+          reactionType = 35; reactionSource = 6; break;
         case index_js_1.Reactions.BYE:
-          ((i = 36), (n = 6));
-          break;
+          reactionType = 36; reactionSource = 6; break;
         case index_js_1.Reactions.SLEEPY:
-          ((i = 38), (n = 6));
-          break;
+          reactionType = 38; reactionSource = 6; break;
         case index_js_1.Reactions.WIPE:
-          ((i = 39), (n = 6));
-          break;
+          reactionType = 39; reactionSource = 6; break;
         case index_js_1.Reactions.DIG:
-          ((i = 42), (n = 6));
-          break;
+          reactionType = 42; reactionSource = 6; break;
         case index_js_1.Reactions.ANGUISH:
-          ((i = 44), (n = 6));
-          break;
+          reactionType = 44; reactionSource = 6; break;
         case index_js_1.Reactions.HANDCLAP:
-          ((i = 46), (n = 6));
-          break;
+          reactionType = 46; reactionSource = 6; break;
         case index_js_1.Reactions.ANGRY_FACE:
-          ((i = 47), (n = 6));
-          break;
+          reactionType = 47; reactionSource = 6; break;
         case index_js_1.Reactions.F_CHAIR:
-          ((i = 48), (n = 6));
-          break;
+          reactionType = 48; reactionSource = 6; break;
         case index_js_1.Reactions.L_CHAIR:
-          ((i = 49), (n = 6));
-          break;
+          reactionType = 49; reactionSource = 6; break;
         case index_js_1.Reactions.R_CHAIR:
-          ((i = 50), (n = 6));
-          break;
+          reactionType = 50; reactionSource = 6; break;
         case index_js_1.Reactions.SILENT:
-          ((i = 52), (n = 6));
-          break;
+          reactionType = 52; reactionSource = 6; break;
         case index_js_1.Reactions.SURPRISE:
-          ((i = 53), (n = 6));
-          break;
+          reactionType = 53; reactionSource = 6; break;
         case index_js_1.Reactions.EMBARRASSED:
-          ((i = 54), (n = 6));
-          break;
+          reactionType = 54; reactionSource = 6; break;
         case index_js_1.Reactions.AFRAID:
-          ((i = 60), (n = 6));
-          break;
+          reactionType = 60; reactionSource = 6; break;
         case index_js_1.Reactions.SAD2:
-          ((i = 61), (n = 6));
-          break;
+          reactionType = 61; reactionSource = 6; break;
         case index_js_1.Reactions.BIG_LAUGH:
-          ((i = 62), (n = 6));
-          break;
+          reactionType = 62; reactionSource = 6; break;
         case index_js_1.Reactions.RICH:
-          ((i = 63), (n = 6));
-          break;
+          reactionType = 63; reactionSource = 6; break;
         case index_js_1.Reactions.BEER:
-          ((i = 99), (n = 6));
-          break;
+          reactionType = 99; reactionSource = 6; break;
         default:
-          ((i = -1), (n = 6));
+          reactionType = -1; reactionSource = 6;
       }
-    e = "object" == typeof e ? e.icon : e;
-    if (null == i || null == n || null == e)
+    }
+
+    const reactionIcon = "object" == typeof reaction ? reaction.icon : reaction;
+
+    if (null == reactionType || null == reactionSource || null == reactionIcon) {
       throw new ZaloApiError_js_1.ZaloApiError("Invalid reaction");
-    var e = {
-        react_list: [
-          {
-            message: JSON.stringify({
-              rMsg: [
-                {
-                  gMsgID: parseInt(a.data.msgId),
-                  cMsgID: parseInt(a.data.cliMsgId),
-                  msgType: 1,
-                },
-              ],
-              rIcon: e,
-              rType: i,
-              source: n,
-            }),
-            clientId: Date.now(),
-          },
-        ],
-      },
-      a =
-        (a.type == index_js_1.ThreadType.User
-          ? (e.toid = a.threadId)
-          : ((e.grid = a.threadId), (e.imei = _.imei)),
-        c.encodeAES(JSON.stringify(e)));
-    if (a)
-      return (
-        (e = await c.request(s, {
-          method: "POST",
-          body: new URLSearchParams({ params: a }),
-        })),
-        c.resolve(e, (e) =>
-          "string" == typeof e.data.msgIds
-            ? { msgIds: JSON.parse(e.data.msgIds) }
-            : e.data,
-        )
-      );
-    throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
+    }
+
+    const requestParams = {
+      react_list: [
+        {
+          message: JSON.stringify({
+            rMsg: [
+              {
+                gMsgID: parseInt(message.data.msgId),
+                cMsgID: parseInt(message.data.cliMsgId),
+                msgType: 1,
+              },
+            ],
+            rIcon: reactionIcon,
+            rType: reactionType,
+            source: reactionSource,
+          }),
+          clientId: Date.now(),
+        },
+      ],
+    };
+
+    if (message.type == index_js_1.ThreadType.User) {
+      requestParams.toid = message.threadId;
+    } else {
+      requestParams.grid = message.threadId;
+      requestParams.imei = appContext.imei;
+    }
+
+    const encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (!encryptedParams) {
+      throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
+    }
+
+    const response = await api.request(endpoint, {
+      method: "POST",
+      body: new URLSearchParams({ params: encryptedParams }),
+    });
+
+    return api.resolve(response, (result) =>
+      "string" == typeof result.data.msgIds
+        ? { msgIds: JSON.parse(result.data.msgIds) }
+        : result.data,
+    );
   };
 });

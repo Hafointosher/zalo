@@ -6,173 +6,223 @@ This project aims to reverse-engineer and deobfuscate the `n8n-nodes-zalo-user-v
 
 **Original Package:** [n8n-nodes-zalo-user-v3](https://www.npmjs.com/package/n8n-nodes-zalo-user-v3)  
 **Version:** 0.0.67  
-**License:** MIT
+**License:** MIT  
+**GitHub:** https://github.com/Hafointosher/zalo
 
-## 🎯 Goals
+## 🎯 Project Goals
 
-1. Understand the internal workings of the Zalo automation node
-2. Deobfuscate and document the codebase
-3. Potentially create an open-source alternative or contribute improvements
+### Primary Goal: Chrome/Edge Extension
+Build a comprehensive Zalo automation extension with:
+- Credential extraction (IMEI, Cookies, User-Agent)
+- Message management & automation
+- Contact/Group management
+- Webhook integration for n8n/external services
+
+### Secondary Goal: n8n Node Rebuild
+- Clean, documented TypeScript codebase
+- Open-source alternative to obfuscated package
 
 ## 📁 Project Structure
 
-### Original Structure (Obfuscated)
-```
-n8n-nodes-zalo-user-v3/dist/
-├── credentials/
-│   ├── ZaloBotApi.credentials.js (24KB - obfuscated)
-│   ├── ZaloOACredentialsApi.credentials.js (22KB - obfuscated)
-│   └── ZaloUserCredentialsApi.credentials.js (30KB - obfuscated)
-└── nodes/
-    ├── ZaloBot/
-    │   ├── ZaloBot.node.js (100KB - obfuscated)
-    │   ├── ZaloBotTrigger.node.js (30KB - obfuscated)
-    │   ├── GenericFunctions.js (29KB - obfuscated)
-    │   └── IEvent.js (20KB - obfuscated)
-    ├── ZaloOA/
-    │   ├── ZaloOA.node.js (241KB - obfuscated)
-    │   └── ZaloOATrigger.node.js (45KB - obfuscated)
-    └── ZaloUser/
-        ├── libs/ (170 files - minified only, readable)
-        │   ├── apis/ (130+ API functions)
-        │   ├── Errors/
-        │   ├── models/
-        │   ├── zalo.js
-        │   ├── context.js
-        │   └── utils.js
-        ├── ZaloUser.node.js (58KB - obfuscated)
-        ├── ZaloUserInteract.node.js (142KB - obfuscated)
-        ├── ZaloUserLogin.node.js (26KB - obfuscated)
-        ├── ZaloManager.node.js (52KB - obfuscated)
-        ├── ZaloApi.js (45KB - obfuscated)
-        ├── utils.js (51KB - obfuscated)
-        └── error.js (21KB - obfuscated)
-```
-
-## ✅ Implementation Progress
-
-### Phase 1: Setup Tools ✅ COMPLETED
-- [x] Created working directory: `n8n-zalo-deobfuscated`
-- [x] Installed `prettier` for code formatting
-- [x] Installed `js-beautify` for beautification
-- [x] Installed `synchrony` for deobfuscation
-
-### Phase 2: Deobfuscate libs/ ✅ COMPLETED
-- [x] Copied 170 files from `libs/` directory
-- [x] Formatted with Prettier
-- [x] Files are now fully readable (were only minified, not obfuscated)
-
-**Key discoveries in libs/:**
-- `zalo.js` - Main Zalo class with `login()`, `loginCookie()`, `loginQR()` methods
-- `apis/` - 130+ API functions (sendMessage, getAllFriends, createGroup, etc.)
-- Uses `tough-cookie` for cookie management
-- AES encryption for API requests
-
-### Phase 3: Deobfuscate Obfuscated Files ✅ COMPLETED
-- [x] credentials/*.js (3 files)
-- [x] ZaloUser.node.js
-- [x] ZaloUserInteract.node.js (largest - 142KB)
-- [x] ZaloUserLogin.node.js
-- [x] ZaloManager.node.js
-- [x] ZaloBot/*.js (4 files)
-- [x] ZaloOA/*.js (2 files)
-
-**Deobfuscation method used:**
-```bash
-npx synchrony "input.js" -o "output.js" --rename
-```
-
-**Synchrony transformations applied:**
-1. StringDecoder - Decoded string arrays
-2. ControlFlow - Removed control flow flattening
-3. DeadCode - Removed dead code
-4. Rename - Renamed variables to readable names
-5. Simplify - Simplified expressions
-
-### Phase 4: Restructure Code ⏳ PENDING
-- [ ] Manual review and rename variables to meaningful names
-- [ ] Document function purposes
-- [ ] Create clean module structure
-
-### Phase 5: TypeScript Conversion ⏳ PENDING
-- [ ] Convert deobfuscated JS to TypeScript
-- [ ] Add proper type definitions
-- [ ] Create compilable source
-
-## 📊 Obfuscation Analysis
-
-The package uses `javascript-obfuscator` with these techniques:
-- **String Array Encoding** - Strings stored in encoded arrays
-- **String Array Rotation** - Arrays shuffled at runtime
-- **Control Flow Flattening** - Switch-case state machines
-- **Dead Code Injection** - Fake code paths
-- **Variable Renaming** - Names like `a12_0x5e07`, `a13_0x225c`
-- **RC4 String Decryption** - Runtime string decoding
-
-## 🔑 Key Features Discovered
-
-| Category | Features |
-|----------|----------|
-| **Message** | Send text, stickers, voice, attachments, mentions, quotes |
-| **Friend** | Send/accept friend requests, find by phone |
-| **Group** | Create/manage groups, add/remove members, polls, reminders |
-| **Get** | Retrieve friends list, groups, user/group info |
-| **Tool** | Text-to-Speech (TTS) |
-
-### Authentication Methods
-- Cookie-based login
-- QR code login
-- Proxy support (Premium)
-
-### API Endpoints (130+)
-- sendMessage, sendSticker, sendVoice
-- getAllFriends, getAllGroups
-- createGroup, disperseGroup
-- addUserToGroup, removeUserFromGroup
-- createPoll, votePoll, lockPoll
-- sendFriendRequest, acceptFriendRequest
-- And many more...
-
-## ⚠️ Warnings
-
-1. **Zalo ToS Violation** - Using this may violate Zalo's policies
-2. **Account Risk** - May result in account restrictions/bans
-3. **Single Session** - Zalo only allows one active browser session
-4. **Unofficial API** - No official support, may break anytime
-
-## 📂 Output Location
-
-Deobfuscated files: `C:\Users\Hafointosher\Desktop\n8n-zalo-deobfuscated`
-
 ```
 n8n-zalo-deobfuscated/
-├── libs/                    # 170 files (readable)
+├── libs/                    # 170 files (deobfuscated + renamed)
+│   ├── apis/               # 131 API functions
+│   ├── Errors/             # Error classes
+│   ├── models/             # Data models
+│   ├── zalo.js             # Main Zalo class
+│   ├── context.js          # Session context
+│   └── utils.js            # Utilities
 ├── credentials/             # 3 files (deobfuscated)
 ├── nodes/
 │   ├── ZaloUser/           # 6 files (deobfuscated)
 │   ├── ZaloBot/            # 4 files (deobfuscated)
 │   └── ZaloOA/             # 2 files (deobfuscated)
-├── deobfuscate.js          # Deobfuscation script
-├── deobfuscate-all.bat     # Batch script
-└── package.json
+├── EXTENSION_PLAN.md       # Chrome Extension design plan
+├── ISSUE.md                # This file
+└── README.md               # Project overview
 ```
 
-## 🔧 Tools Used
+## ✅ Implementation Progress
 
-- **synchrony** - JavaScript deobfuscator for javascript-obfuscator output
-- **prettier** - Code formatter
-- **js-beautify** - JavaScript beautifier
+### Phase 1: Deobfuscation ✅ COMPLETED
+- [x] Setup deobfuscation tools (synchrony, prettier)
+- [x] Deobfuscated all 193 files
+- [x] Pushed to GitHub: https://github.com/Hafointosher/zalo
 
-## 📝 Next Steps
+### Phase 2: Variable Renaming 🔄 IN PROGRESS (~40%)
 
-1. Manual variable renaming based on context
-2. Document each API function
-3. Create TypeScript definitions
-4. Build a clean, documented version
-5. Consider creating an open-source alternative
+**Completed files:**
+- [x] `libs/apis/login.js`
+- [x] `libs/apis/getUserInfo.js`
+- [x] `libs/apis/sendMessage.js` ⭐ (complex, 460+ lines)
+- [x] `libs/apis/listen.js` ⭐ (WebSocket listener)
+- [x] `libs/apis/getAllFriends.js`
+- [x] `libs/apis/getAllGroups.js`
+- [x] `libs/apis/getGroupInfo.js`
+- [x] `libs/apis/uploadAttachment.js`
+- [x] `libs/apis/addReaction.js`
+- [x] `libs/apis/createGroup.js`
+- [x] `libs/apis/deleteMessage.js`
+- [x] `libs/apis/sendFriendRequest.js`
+- [x] `libs/apis/findUser.js`
+- [x] `libs/apis/forwardMessage.js`
+- [x] `libs/apis/sendSticker.js`
+- [x] `libs/apis/changeGroupName.js`
+- [x] `libs/apis/addUserToGroup.js`
+- [x] `libs/apis/removeUserFromGroup.js`
+- [x] `libs/apis/leaveGroup.js`
+- [x] `libs/apis/blockUser.js`
+- [x] `libs/apis/unblockUser.js`
+- [x] `libs/apis/acceptFriendRequest.js`
+- [x] `libs/apis/rejectFriendRequest.js`
+- [x] `libs/apis/removeFriend.js`
+- [x] `libs/apis/sendLink.js`
+- [x] `libs/apis/sendVoice.js`
+- [x] `libs/apis/sendVideo.js`
+- [x] `libs/apis/getGroupMembersInfo.js`
+- [x] `libs/apis/changeGroupAvatar.js`
+- [x] `libs/apis/createPoll.js`
+- [x] `libs/apis/setMute.js`
+- [x] `libs/apis/setPinnedConversations.js`
+- [x] `libs/apis/updateGroupSettings.js`
 
-## 📚 References
+**Naming conventions used:**
+| Original | Renamed |
+|----------|---------|
+| `e, r, t` (factory params) | `serviceUrls, appContext, api` |
+| `i, o, a` (URLs) | `endpoint, apiUrl` |
+| Request objects | `requestParams` |
+| Encrypted data | `encryptedParams` |
+| API responses | `response` |
 
-- [n8n Community Nodes Documentation](https://docs.n8n.io/integrations/community-nodes/)
-- [Original Package README](https://www.npmjs.com/package/n8n-nodes-zalo-user-v3)
-- [zca-js](https://www.npmjs.com/package/zca-js) - Related Zalo API library
+### Phase 3: Chrome Extension 📋 PLANNED
+
+See [EXTENSION_PLAN.md](./EXTENSION_PLAN.md) for detailed design.
+
+**Architecture:**
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Chrome/Edge Extension                   │
+├─────────────┬─────────────┬─────────────┬───────────────┤
+│   Popup UI  │  Dashboard  │   Service   │    Content    │
+│   (Quick    │   (Full     │   Worker    │    Script     │
+│   Actions)  │    UI)      │ (Background)│  (Injector)   │
+└─────────────┴─────────────┴─────────────┴───────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────┐
+│                    Zalo Web APIs                         │
+│  • REST APIs (chat, group, friend)                       │
+│  • WebSocket (real-time messages)                        │
+│  • localStorage (IMEI, session)                          │
+└─────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────┐
+│                  External Services                       │
+│  • Webhook endpoints                                     │
+│  • n8n automation workflows                              │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Timeline:**
+| Week | Phase | Tasks |
+|------|-------|-------|
+| 1-2 | Foundation | Manifest V3, credential extraction, popup UI |
+| 3-4 | Core API | Port zca-js to browser, WebSocket listener |
+| 5-6 | Dashboard | Full UI, message feed, export features |
+| 7-8 | Automation | Webhooks, auto-reply, scheduling |
+| 9-10 | Polish | Testing, i18n, documentation, publish |
+
+### Phase 4: TypeScript Conversion ⏳ PENDING
+- [ ] Convert deobfuscated JS to TypeScript
+- [ ] Add proper type definitions
+- [ ] Create compilable source
+
+### Phase 5: Documentation ⏳ PENDING
+- [ ] Document each API function
+- [ ] Create usage examples
+- [ ] Write developer guide
+
+## 🔑 Key API Functions (131 total)
+
+### Messaging
+| Function | Description |
+|----------|-------------|
+| `sendMessage` | Send text, attachments, mentions, quotes |
+| `sendSticker` | Send stickers |
+| `sendVoice` | Send voice messages |
+| `sendVideo` | Send video files |
+| `sendLink` | Send link previews |
+| `forwardMessage` | Forward messages |
+| `deleteMessage` | Delete messages |
+| `addReaction` | React to messages |
+
+### Friends
+| Function | Description |
+|----------|-------------|
+| `getAllFriends` | Get friends list |
+| `getUserInfo` | Get user profile |
+| `findUser` | Search by phone number |
+| `sendFriendRequest` | Send friend request |
+| `acceptFriendRequest` | Accept friend request |
+| `removeFriend` | Unfriend user |
+| `blockUser` / `unblockUser` | Block/unblock |
+
+### Groups
+| Function | Description |
+|----------|-------------|
+| `getAllGroups` | Get groups list |
+| `getGroupInfo` | Get group details |
+| `createGroup` | Create new group |
+| `addUserToGroup` | Add members |
+| `removeUserFromGroup` | Remove members |
+| `changeGroupName` | Rename group |
+| `changeGroupAvatar` | Update avatar |
+| `createPoll` | Create poll |
+| `updateGroupSettings` | Change settings |
+
+### Real-time
+| Function | Description |
+|----------|-------------|
+| `listen` | WebSocket message listener |
+| `sendTypingEvent` | Typing indicator |
+| `sendSeenEvent` | Mark as seen |
+
+## 🔗 Related Resources
+
+| Resource | URL | Description |
+|----------|-----|-------------|
+| **zca-js** | https://github.com/RFS-ADRENO/zca-js | Official Zalo API library (TypeScript) |
+| **zca-js Docs** | https://tdung.gitbook.io/zca-js | API documentation |
+| **ZaloDataExtractor** | https://github.com/JustKemForFun/ZaloDataExtractor | Reference Chrome extension |
+| **This Project** | https://github.com/Hafointosher/zalo | Deobfuscated source |
+
+## ⚠️ Warnings & Disclaimers
+
+1. **Zalo ToS** - Using unofficial APIs may violate Zalo's Terms of Service
+2. **Account Risk** - May result in account restrictions or bans
+3. **Single Session** - Zalo only allows one active browser session per account
+4. **Unofficial API** - No official support, may break with Zalo updates
+5. **Educational Purpose** - This project is for learning and research only
+
+## 📝 Changelog
+
+### 2026-01-07
+- ✅ Deobfuscated all 193 files using synchrony
+- ✅ Pushed to GitHub (https://github.com/Hafointosher/zalo)
+- ✅ Renamed variables in 30+ key API files
+- ✅ Created Chrome Extension design plan
+- 🔄 Variable renaming in progress (~40%)
+
+### Next Actions
+1. Continue renaming remaining API files
+2. Create extension boilerplate (Manifest V3)
+3. Port zca-js crypto/utils to browser
+4. Build popup UI with credential extraction
+
+---
+
+*Last updated: January 7, 2026*
+*Maintainer: Hafointosher*

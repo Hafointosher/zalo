@@ -3,111 +3,118 @@
   (exports.getServerInfo = getServerInfo));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-async function login(r, e) {
-  e = await getEncryptParam(r, e, "getlogininfo");
+
+async function login(serviceUrls, useEncryption) {
+  const encryptResult = await getEncryptParam(serviceUrls, useEncryption, "getlogininfo");
   try {
-    var t,
-      a,
-      i = await (0, utils_js_1.request)(
-        r,
+    var jsonData,
+      decryptedData,
+      response = await (0, utils_js_1.request)(
+        serviceUrls,
         (0, utils_js_1.makeURL)(
-          r,
+          serviceUrls,
           "https://wpa.chat.zalo.me/api/login/getLoginInfo",
-          { ...e.params, nretry: 0 },
+          { ...encryptResult.params, nretry: 0 },
         ),
       );
-    if (i.ok)
+    if (response.ok)
       return (
-        (t = await i.json()),
-        e.enk &&
-        null != (a = (0, utils_js_1.decryptResp)(e.enk, t.data)) &&
-        "string" != typeof a
-          ? a
+        (jsonData = await response.json()),
+        encryptResult.enk &&
+        null != (decryptedData = (0, utils_js_1.decryptResp)(encryptResult.enk, jsonData.data)) &&
+        "string" != typeof decryptedData
+          ? decryptedData
           : null
       );
     throw new ZaloApiError_js_1.ZaloApiError(
-      "Failed to fetch login info: " + i.statusText,
+      "Failed to fetch login info: " + response.statusText,
     );
-  } catch (e) {
-    throw ((0, utils_js_1.logger)(r).error("Login failed:", e), e);
+  } catch (error) {
+    throw ((0, utils_js_1.logger)(serviceUrls).error("Login failed:", error), error);
   }
 }
-async function getServerInfo(e, r) {
-  r = await getEncryptParam(e, r, "getserverinfo");
-  if (!r.params.signkey || "string" != typeof r.params.signkey)
+
+async function getServerInfo(serviceUrls, useEncryption) {
+  const encryptResult = await getEncryptParam(serviceUrls, useEncryption, "getserverinfo");
+  if (!encryptResult.params.signkey || "string" != typeof encryptResult.params.signkey)
     throw new ZaloApiError_js_1.ZaloApiError("Missing signkey");
-  e = await (0, utils_js_1.request)(
-    e,
+  
+  const response = await (0, utils_js_1.request)(
+    serviceUrls,
     (0, utils_js_1.makeURL)(
-      e,
+      serviceUrls,
       "https://wpa.chat.zalo.me/api/login/getServerInfo",
       {
-        imei: e.imei,
-        type: e.API_TYPE,
-        client_version: e.API_VERSION,
+        imei: serviceUrls.imei,
+        type: serviceUrls.API_TYPE,
+        client_version: serviceUrls.API_VERSION,
         computer_name: "Web",
-        signkey: r.params.signkey,
+        signkey: encryptResult.params.signkey,
       },
       !1,
     ),
   );
-  if (!e.ok)
+  
+  if (!response.ok)
     throw new ZaloApiError_js_1.ZaloApiError(
-      "Failed to fetch server info: " + e.statusText,
+      "Failed to fetch server info: " + response.statusText,
     );
-  r = await e.json();
-  if (null == r.data)
+  
+  const jsonData = await response.json();
+  if (null == jsonData.data)
     throw new ZaloApiError_js_1.ZaloApiError(
-      "Failed to fetch server info: " + r.error_message,
+      "Failed to fetch server info: " + jsonData.error_message,
     );
-  return r.data;
+  return jsonData.data;
 }
-async function getEncryptParam(e, r, t) {
-  var a,
-    i = {},
-    n = {
+
+async function getEncryptParam(serviceUrls, useEncryption, apiMethod) {
+  var encryptedData,
+    params = {},
+    baseParams = {
       computer_name: "Web",
-      imei: e.imei,
-      language: e.language,
+      imei: serviceUrls.imei,
+      language: serviceUrls.language,
       ts: Date.now(),
     },
-    r = await _encryptParam(e, n, r);
+    encryptResult = await _encryptParam(serviceUrls, baseParams, useEncryption);
   return (
-    null == r
-      ? Object.assign(i, n)
-      : (({ encrypted_params: n, encrypted_data: a } = r),
-        Object.assign(i, n),
-        (i.params = a)),
-    (i.type = e.API_TYPE),
-    (i.client_version = e.API_VERSION),
-    (i.signkey =
-      "getserverinfo" == t
-        ? (0, utils_js_1.getSignKey)(t, {
-            imei: e.imei,
-            type: e.API_TYPE,
-            client_version: e.API_VERSION,
+    null == encryptResult
+      ? Object.assign(params, baseParams)
+      : (({ encrypted_params: baseParams, encrypted_data: encryptedData } = encryptResult),
+        Object.assign(params, baseParams),
+        (params.params = encryptedData)),
+    (params.type = serviceUrls.API_TYPE),
+    (params.client_version = serviceUrls.API_VERSION),
+    (params.signkey =
+      "getserverinfo" == apiMethod
+        ? (0, utils_js_1.getSignKey)(apiMethod, {
+            imei: serviceUrls.imei,
+            type: serviceUrls.API_TYPE,
+            client_version: serviceUrls.API_VERSION,
             computer_name: "Web",
           })
-        : (0, utils_js_1.getSignKey)(t, i)),
-    { params: i, enk: r ? r.enk : null }
+        : (0, utils_js_1.getSignKey)(apiMethod, params)),
+    { params: params, enk: encryptResult ? encryptResult.enk : null }
   );
 }
-async function _encryptParam(e, r, t) {
-  if (t) {
-    t = new utils_js_1.ParamsEncryptor({
-      type: e.API_TYPE,
-      imei: r.imei,
+
+async function _encryptParam(serviceUrls, baseParams, useEncryption) {
+  if (useEncryption) {
+    const encryptor = new utils_js_1.ParamsEncryptor({
+      type: serviceUrls.API_TYPE,
+      imei: baseParams.imei,
       firstLaunchTime: Date.now(),
     });
     try {
-      var a = JSON.stringify(r),
-        i = t.getEncryptKey(),
-        n = utils_js_1.ParamsEncryptor.encodeAES(i, a, "base64", !1),
-        s = t.getParams();
-      return s ? { encrypted_data: n, encrypted_params: s, enk: i } : null;
-    } catch (e) {
+      var jsonData = JSON.stringify(baseParams),
+        encryptKey = encryptor.getEncryptKey(),
+        encryptedData = utils_js_1.ParamsEncryptor.encodeAES(encryptKey, jsonData, "base64", !1),
+        encryptedParams = encryptor.getParams();
+      return encryptedParams ? { encrypted_data: encryptedData, encrypted_params: encryptedParams, enk: encryptKey } : null;
+    } catch (error) {
       throw new ZaloApiError_js_1.ZaloApiError(
-        "Failed to encrypt params: " + e,
+        "Failed to encrypt params: " + error,
       );
     }
   }

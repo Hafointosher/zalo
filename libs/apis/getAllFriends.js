@@ -1,26 +1,33 @@
-(Object.defineProperty(exports, "__esModule", { value: !0 }),
-  (exports.getAllFriendsFactory = void 0));
-let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
-  utils_js_1 = require("../utils.js");
-exports.getAllFriendsFactory = (0, utils_js_1.apiFactory)()((e, i, t) => {
-  let a = t.makeURL(
-    e.zpwServiceMap.profile[0] + "/api/social/friend/getfriends",
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getAllFriendsFactory = void 0;
+
+const ZaloApiError_js_1 = require("../Errors/ZaloApiError.js");
+const utils_js_1 = require("../utils.js");
+
+exports.getAllFriendsFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  const endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.profile[0] + "/api/social/friend/getfriends"
   );
-  return async function (e = 2e4, r = 1) {
-    var r = {
-        incInvalid: 1,
-        page: r,
-        count: e,
-        avatar_size: 120,
-        actiontime: 0,
-        imei: i.imei,
-      },
-      e = t.encodeAES(JSON.stringify(r));
-    if (e)
-      return (
-        (r = await t.request(t.makeURL(a, { params: e }), { method: "GET" })),
-        t.resolve(r)
-      );
-    throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
+
+  return async function getAllFriends(count = 20000, page = 1) {
+    const requestParams = {
+      incInvalid: 1,
+      page: page,
+      count: count,
+      avatar_size: 120,
+      actiontime: 0,
+      imei: appContext.imei,
+    };
+
+    const encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+
+    if (!encryptedParams) {
+      throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
+    }
+
+    const apiUrl = api.makeURL(endpoint, { params: encryptedParams });
+    const response = await api.request(apiUrl, { method: "GET" });
+
+    return api.resolve(response);
   };
 });

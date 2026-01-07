@@ -2,8 +2,8 @@ var TextStyle,
   Urgency,
   __importDefault =
     (this && this.__importDefault) ||
-    function (e) {
-      return e && e.__esModule ? e : { default: e };
+    function (module) {
+      return module && module.__esModule ? module : { default: module };
     };
 (Object.defineProperty(exports, "__esModule", { value: !0 }),
   (exports.sendMessageFactory = exports.Urgency = exports.TextStyle = void 0));
@@ -18,10 +18,10 @@ let form_data_1 = __importDefault(require("form-data")),
     video: "asyncfile/msg?",
     others: "asyncfile/msg?",
   };
-function prepareQMSGAttach(e) {
-  return "string" == typeof e.content
-    ? e.propertyExt
-    : "chat.todo" == e.msgType
+function prepareQMSGAttach(quoteMessage) {
+  return "string" == typeof quoteMessage.content
+    ? quoteMessage.propertyExt
+    : "chat.todo" == quoteMessage.msgType
       ? {
           properties: {
             color: 0,
@@ -32,430 +32,430 @@ function prepareQMSGAttach(e) {
           },
         }
       : {
-          ...e.content,
-          thumbUrl: e.content.thumb,
-          oriUrl: e.content.href,
-          normalUrl: e.content.href,
+          ...quoteMessage.content,
+          thumbUrl: quoteMessage.content.thumb,
+          oriUrl: quoteMessage.content.href,
+          normalUrl: quoteMessage.content.href,
         };
 }
-function prepareQMSG(e) {
-  return "chat.todo" == e.msgType &&
-    "object" == typeof e.content &&
-    "string" == typeof e.content.params
-    ? JSON.parse(e.content.params).item.content
+function prepareQMSG(quoteMessage) {
+  return "chat.todo" == quoteMessage.msgType &&
+    "object" == typeof quoteMessage.content &&
+    "string" == typeof quoteMessage.content.params
+    ? JSON.parse(quoteMessage.content.params).item.content
     : "";
 }
-(((e) => {
-  ((e.Bold = "b"),
-    (e.Italic = "i"),
-    (e.Underline = "u"),
-    (e.StrikeThrough = "s"),
-    (e.Red = "c_db342e"),
-    (e.Orange = "c_f27806"),
-    (e.Yellow = "c_f7b503"),
-    (e.Green = "c_15a85f"),
-    (e.Small = "f_13"),
-    (e.Big = "f_18"),
-    (e.UnorderedList = "lst_1"),
-    (e.OrderedList = "lst_2"),
-    (e.Indent = "ind_$"));
+(((style) => {
+  ((style.Bold = "b"),
+    (style.Italic = "i"),
+    (style.Underline = "u"),
+    (style.StrikeThrough = "s"),
+    (style.Red = "c_db342e"),
+    (style.Orange = "c_f27806"),
+    (style.Yellow = "c_f7b503"),
+    (style.Green = "c_15a85f"),
+    (style.Small = "f_13"),
+    (style.Big = "f_18"),
+    (style.UnorderedList = "lst_1"),
+    (style.OrderedList = "lst_2"),
+    (style.Indent = "ind_$"));
 })(TextStyle || (exports.TextStyle = TextStyle = {})),
-  ((e) => {
-    ((e[(e.Default = 0)] = "Default"),
-      (e[(e.Important = 1)] = "Important"),
-      (e[(e.Urgent = 2)] = "Urgent"));
+  ((urgencyEnum) => {
+    ((urgencyEnum[(urgencyEnum.Default = 0)] = "Default"),
+      (urgencyEnum[(urgencyEnum.Important = 1)] = "Important"),
+      (urgencyEnum[(urgencyEnum.Urgent = 2)] = "Urgent"));
   })(Urgency || (exports.Urgency = Urgency = {})),
-  (exports.sendMessageFactory = (0, utils_js_1.apiFactory)()((I, Z, F) => {
-    let q = {
+  (exports.sendMessageFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+    let endpoints = {
         message: {
-          [index_js_1.ThreadType.User]: F.makeURL(
-            I.zpwServiceMap.chat[0] + "/api/message",
+          [index_js_1.ThreadType.User]: api.makeURL(
+            serviceUrls.zpwServiceMap.chat[0] + "/api/message",
             { nretry: 0 },
           ),
-          [index_js_1.ThreadType.Group]: F.makeURL(
-            I.zpwServiceMap.group[0] + "/api/group",
+          [index_js_1.ThreadType.Group]: api.makeURL(
+            serviceUrls.zpwServiceMap.group[0] + "/api/group",
             { nretry: 0 },
           ),
         },
         attachment: {
           [index_js_1.ThreadType.User]:
-            I.zpwServiceMap.file[0] + "/api/message/",
+            serviceUrls.zpwServiceMap.file[0] + "/api/message/",
           [index_js_1.ThreadType.Group]:
-            I.zpwServiceMap.file[0] + "/api/group/",
+            serviceUrls.zpwServiceMap.file[0] + "/api/group/",
         },
       },
-      M = Z.settings.features.sharefile;
-    async function g(e) {
-      var r = [];
-      for (let t of (e = Array.isArray(e) ? e : [e]))
-        r.push(
+      shareFileConfig = appContext.settings.features.sharefile;
+    async function sendRequests(requestConfigs) {
+      var results = [];
+      for (let config of (requestConfigs = Array.isArray(requestConfigs) ? requestConfigs : [requestConfigs]))
+        results.push(
           (async () => {
-            var e = await F.request(t.url, {
+            var response = await api.request(config.url, {
               method: "POST",
-              body: t.body,
-              headers: t.headers,
+              body: config.body,
+              headers: config.headers,
             });
-            return (0, utils_js_1.resolveResponse)(Z, e);
+            return (0, utils_js_1.resolveResponse)(appContext, response);
           })(),
         );
-      return Promise.all(r);
+      return Promise.all(results);
     }
-    function z(e, t, r) {
-      let i = 0;
-      e =
-        Array.isArray(r) && e == index_js_1.ThreadType.Group
-          ? r
-              .filter((e) => 0 <= e.pos && e.uid && 0 < e.len)
+    function processMentions(threadType, message, mentions) {
+      let totalMentionLength = 0;
+      var mentionsFinal =
+        Array.isArray(mentions) && threadType == index_js_1.ThreadType.Group
+          ? mentions
+              .filter((mention) => 0 <= mention.pos && mention.uid && 0 < mention.len)
               .map(
-                (e) => (
-                  (i += e.len),
+                (mention) => (
+                  (totalMentionLength += mention.len),
                   {
-                    pos: e.pos,
-                    uid: e.uid,
-                    len: e.len,
-                    type: "-1" == e.uid ? 1 : 0,
+                    pos: mention.pos,
+                    uid: mention.uid,
+                    len: mention.len,
+                    type: "-1" == mention.uid ? 1 : 0,
                   }
                 ),
               )
           : [];
-      if (i > t.length)
+      if (totalMentionLength > message.length)
         throw new ZaloApiError_js_1.ZaloApiError(
           "Invalid mentions: total mention characters exceed message length",
         );
-      return { mentionsFinal: e, msgFinal: t };
+      return { mentionsFinal: mentionsFinal, msgFinal: message };
     }
-    function O(e, t) {
-      (t != Urgency.Important && t != Urgency.Urgent) ||
-        Object.assign(e, { metaData: { urgency: t } });
+    function applyUrgency(params, urgencyLevel) {
+      (urgencyLevel != Urgency.Important && urgencyLevel != Urgency.Urgent) ||
+        Object.assign(params, { metaData: { urgency: urgencyLevel } });
     }
-    async function f(
-      { msg: e, styles: t, urgency: r, mentions: i, quote: a, ttl: n },
-      o,
-      s,
+    async function buildTextMessage(
+      { msg: message, styles: textStyles, urgency: urgencyLevel, mentions: mentionsList, quote: quoteMessage, ttl: timeToLive },
+      threadId,
+      threadType,
     ) {
-      if (!e || 0 == e.length)
+      if (!message || 0 == message.length)
         throw new ZaloApiError_js_1.ZaloApiError("Missing message content");
-      var l = s == index_js_1.ThreadType.Group,
-        { mentionsFinal: i, msgFinal: p } = z(s, e, i);
-      if (((e = p), a)) {
-        if ("string" != typeof a.content && "webchat" == a.msgType)
+      var isGroupThread = threadType == index_js_1.ThreadType.Group,
+        { mentionsFinal: processedMentions, msgFinal: finalMessage } = processMentions(threadType, message, mentionsList);
+      if (((message = finalMessage), quoteMessage)) {
+        if ("string" != typeof quoteMessage.content && "webchat" == quoteMessage.msgType)
           throw new ZaloApiError_js_1.ZaloApiError(
             "This kind of `webchat` quote type is not available",
           );
-        if ("group.poll" == a.msgType)
+        if ("group.poll" == quoteMessage.msgType)
           throw new ZaloApiError_js_1.ZaloApiError(
             "The `group.poll` quote type is not available",
           );
       }
-      var p = 0 < i.length && l,
-        e = a
+      var hasMentions = 0 < processedMentions.length && isGroupThread,
+        messageParams = quoteMessage
           ? {
-              toid: l ? void 0 : o,
-              grid: l ? o : void 0,
-              message: e,
+              toid: isGroupThread ? void 0 : threadId,
+              grid: isGroupThread ? threadId : void 0,
+              message: message,
               clientId: Date.now(),
-              mentionInfo: p ? JSON.stringify(i) : void 0,
-              qmsgOwner: a.uidFrom,
-              qmsgId: a.msgId,
-              qmsgCliId: a.cliMsgId,
-              qmsgType: (0, utils_js_1.getClientMessageType)(a.msgType),
-              qmsgTs: a.ts,
-              qmsg: "string" == typeof a.content ? a.content : prepareQMSG(a),
-              imei: l ? void 0 : Z.imei,
-              visibility: l ? 0 : void 0,
-              qmsgAttach: l ? JSON.stringify(prepareQMSGAttach(a)) : void 0,
-              qmsgTTL: a.ttl,
-              ttl: null != n ? n : 0,
+              mentionInfo: hasMentions ? JSON.stringify(processedMentions) : void 0,
+              qmsgOwner: quoteMessage.uidFrom,
+              qmsgId: quoteMessage.msgId,
+              qmsgCliId: quoteMessage.cliMsgId,
+              qmsgType: (0, utils_js_1.getClientMessageType)(quoteMessage.msgType),
+              qmsgTs: quoteMessage.ts,
+              qmsg: "string" == typeof quoteMessage.content ? quoteMessage.content : prepareQMSG(quoteMessage),
+              imei: isGroupThread ? void 0 : appContext.imei,
+              visibility: isGroupThread ? 0 : void 0,
+              qmsgAttach: isGroupThread ? JSON.stringify(prepareQMSGAttach(quoteMessage)) : void 0,
+              qmsgTTL: quoteMessage.ttl,
+              ttl: null != timeToLive ? timeToLive : 0,
             }
           : {
-              message: e,
+              message: message,
               clientId: Date.now(),
-              mentionInfo: p ? JSON.stringify(i) : void 0,
-              imei: l ? void 0 : Z.imei,
-              ttl: null != n ? n : 0,
-              visibility: l ? 0 : void 0,
-              toid: l ? void 0 : o,
-              grid: l ? o : void 0,
+              mentionInfo: hasMentions ? JSON.stringify(processedMentions) : void 0,
+              imei: isGroupThread ? void 0 : appContext.imei,
+              ttl: null != timeToLive ? timeToLive : 0,
+              visibility: isGroupThread ? 0 : void 0,
+              toid: isGroupThread ? void 0 : threadId,
+              grid: isGroupThread ? threadId : void 0,
             },
-        n =
-          ((p = e),
-          (i = t) &&
-            Object.assign(p, {
+        encryptedParams =
+          ((hasMentions = messageParams),
+          (processedMentions = textStyles) &&
+            Object.assign(hasMentions, {
               textProperties: JSON.stringify({
-                styles: i.map((e) => {
-                  var t = {
-                    ...e,
+                styles: processedMentions.map((style) => {
+                  var styleObj = {
+                    ...style,
                     indentSize: void 0,
                     st:
-                      e.st == TextStyle.Indent
+                      style.st == TextStyle.Indent
                         ? TextStyle.Indent.replace(
                             /\$/g,
-                            `${null != (t = e.indentSize) ? t : 1}0`,
+                            `${null != (styleObj = style.indentSize) ? styleObj : 1}0`,
                           )
-                        : e.st,
+                        : style.st,
                   };
-                  return ((0, utils_js_1.removeUndefinedKeys)(t), t);
+                  return ((0, utils_js_1.removeUndefinedKeys)(styleObj), styleObj);
                 }),
                 ver: 0,
               }),
             }),
-          O(e, r),
-          (0, utils_js_1.removeUndefinedKeys)(e),
-          F.encodeAES(JSON.stringify(e)));
-      if (n)
+          applyUrgency(messageParams, urgencyLevel),
+          (0, utils_js_1.removeUndefinedKeys)(messageParams),
+          api.encodeAES(JSON.stringify(messageParams)));
+      if (encryptedParams)
         return (
-          ((o = new URL(q.message[s])).pathname = a
-            ? o.pathname + "/quote"
-            : o.pathname +
+          ((threadId = new URL(endpoints.message[threadType])).pathname = quoteMessage
+            ? threadId.pathname + "/quote"
+            : threadId.pathname +
               "/" +
-              (l ? (e.mentionInfo ? "mention" : "sendmsg") : "sms")),
-          { url: o.toString(), body: new URLSearchParams({ params: n }) }
+              (isGroupThread ? (messageParams.mentionInfo ? "mention" : "sendmsg") : "sms")),
+          { url: threadId.toString(), body: new URLSearchParams({ params: encryptedParams }) }
         );
       throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
     }
-    async function u(
-      { msg: t, attachments: e, mentions: r, quote: i, ttl: a, urgency: n },
-      o,
-      s,
+    async function buildAttachmentMessage(
+      { msg: message, attachments: attachmentList, mentions: mentionsList, quote: quoteMessage, ttl: timeToLive, urgency: urgencyLevel },
+      threadId,
+      threadType,
     ) {
-      if (!e) throw new ZaloApiError_js_1.ZaloApiError("Missing attachments");
-      if (0 == (e = Array.isArray(e) ? e : [e]).length)
+      if (!attachmentList) throw new ZaloApiError_js_1.ZaloApiError("Missing attachments");
+      if (0 == (attachmentList = Array.isArray(attachmentList) ? attachmentList : [attachmentList]).length)
         throw new ZaloApiError_js_1.ZaloApiError("Missing attachments");
-      var l = e[0];
-      let p = "string" == typeof l;
-      var l = (0, utils_js_1.getFileExtension)(p ? l : l.filename),
-        d = 1 == e.length,
-        m = s == index_js_1.ThreadType.Group,
-        g = d && ["jpg", "jpeg", "png", "webp"].includes(l),
-        d = e.filter(
-          (e) =>
+      var firstAttachment = attachmentList[0];
+      let isFilePath = "string" == typeof firstAttachment;
+      var fileExtension = (0, utils_js_1.getFileExtension)(isFilePath ? firstAttachment : firstAttachment.filename),
+        isSingleAttachment = 1 == attachmentList.length,
+        isGroupThread = threadType == index_js_1.ThreadType.Group,
+        isSingleImage = isSingleAttachment && ["jpg", "jpeg", "png", "webp"].includes(fileExtension),
+        gifAttachments = attachmentList.filter(
+          (attachment) =>
             "gif" ==
             (0, utils_js_1.getFileExtension)(
-              "string" == typeof e ? e : e.filename,
+              "string" == typeof attachment ? attachment : attachment.filename,
             ),
         ),
-        f =
+        uploadedFiles =
           0 ==
-          (e = e.filter(
-            (e) =>
+          (attachmentList = attachmentList.filter(
+            (attachment) =>
               "gif" !=
               (0, utils_js_1.getFileExtension)(
-                "string" == typeof e ? e : e.filename,
+                "string" == typeof attachment ? attachment : attachment.filename,
               ),
           )).length
             ? []
-            : await I.uploadAttachment(e, o, s),
-        u = [];
-      let c = f.length - 1;
-      var h,
-        y,
-        _ = Date.now(),
-        { mentionsFinal: w, msgFinal: l } = z(s, t, r),
-        v = ((t = l), 0 < w.length && m && 1 == e.length),
-        j = 1 < e.length;
-      let S = Date.now();
-      for (h of f) {
-        let e;
-        switch (h.fileType) {
+            : await serviceUrls.uploadAttachment(attachmentList, threadId, threadType),
+        requestConfigs = [];
+      let groupIdxCounter = uploadedFiles.length - 1;
+      var uploadedFile,
+        gifAttachment,
+        groupLayoutId = Date.now(),
+        { mentionsFinal: processedMentions, msgFinal: finalMessage } = processMentions(threadType, message, mentionsList),
+        hasMentionsForImage = ((message = finalMessage), 0 < processedMentions.length && isGroupThread && 1 == attachmentList.length),
+        isMultipleAttachments = 1 < attachmentList.length;
+      let clientIdCounter = Date.now();
+      for (uploadedFile of uploadedFiles) {
+        let attachmentParams;
+        switch (uploadedFile.fileType) {
           case "image":
-            e = {
-              fileType: h.fileType,
+            attachmentParams = {
+              fileType: uploadedFile.fileType,
               params: {
-                photoId: h.photoId,
-                clientId: (S++).toString(),
-                desc: t,
-                width: h.width,
-                height: h.height,
-                toid: m ? void 0 : String(o),
-                grid: m ? String(o) : void 0,
-                rawUrl: h.normalUrl,
-                hdUrl: h.hdUrl,
-                thumbUrl: h.thumbUrl,
-                oriUrl: m ? h.normalUrl : void 0,
-                normalUrl: m ? void 0 : h.normalUrl,
-                hdSize: String(h.totalSize),
+                photoId: uploadedFile.photoId,
+                clientId: (clientIdCounter++).toString(),
+                desc: message,
+                width: uploadedFile.width,
+                height: uploadedFile.height,
+                toid: isGroupThread ? void 0 : String(threadId),
+                grid: isGroupThread ? String(threadId) : void 0,
+                rawUrl: uploadedFile.normalUrl,
+                hdUrl: uploadedFile.hdUrl,
+                thumbUrl: uploadedFile.thumbUrl,
+                oriUrl: isGroupThread ? uploadedFile.normalUrl : void 0,
+                normalUrl: isGroupThread ? void 0 : uploadedFile.normalUrl,
+                hdSize: String(uploadedFile.totalSize),
                 zsource: -1,
-                ttl: null != a ? a : 0,
+                ttl: null != timeToLive ? timeToLive : 0,
                 jcp: '{"convertible":"jxl"}',
-                groupLayoutId: j ? _ : void 0,
-                isGroupLayout: j ? 1 : void 0,
-                idInGroup: j ? c-- : void 0,
-                totalItemInGroup: j ? f.length : void 0,
-                mentionInfo: v && g && !i ? JSON.stringify(w) : void 0,
+                groupLayoutId: isMultipleAttachments ? groupLayoutId : void 0,
+                isGroupLayout: isMultipleAttachments ? 1 : void 0,
+                idInGroup: isMultipleAttachments ? groupIdxCounter-- : void 0,
+                totalItemInGroup: isMultipleAttachments ? uploadedFiles.length : void 0,
+                mentionInfo: hasMentionsForImage && isSingleImage && !quoteMessage ? JSON.stringify(processedMentions) : void 0,
               },
               body: new URLSearchParams(),
             };
             break;
           case "video":
           case "others":
-            e = {
-              fileType: h.fileType,
+            attachmentParams = {
+              fileType: uploadedFile.fileType,
               params: {
-                fileId: h.fileId,
-                checksum: h.checksum,
+                fileId: uploadedFile.fileId,
+                checksum: uploadedFile.checksum,
                 checksumSha: "",
-                extention: (0, utils_js_1.getFileExtension)(h.fileName),
-                totalSize: h.totalSize,
-                fileName: h.fileName,
-                clientId: h.clientFileId,
+                extention: (0, utils_js_1.getFileExtension)(uploadedFile.fileName),
+                totalSize: uploadedFile.totalSize,
+                fileName: uploadedFile.fileName,
+                clientId: uploadedFile.clientFileId,
                 fType: 1,
                 fileCount: 0,
                 fdata: "{}",
-                toid: m ? void 0 : String(o),
-                grid: m ? String(o) : void 0,
-                fileUrl: h.fileUrl,
+                toid: isGroupThread ? void 0 : String(threadId),
+                grid: isGroupThread ? String(threadId) : void 0,
+                fileUrl: uploadedFile.fileUrl,
                 zsource: -1,
-                ttl: null != a ? a : 0,
+                ttl: null != timeToLive ? timeToLive : 0,
               },
               body: new URLSearchParams(),
             };
         }
-        (O(e.params, n), (0, utils_js_1.removeUndefinedKeys)(e.params));
-        var T = F.encodeAES(JSON.stringify(e.params));
-        if (!T)
+        (applyUrgency(attachmentParams.params, urgencyLevel), (0, utils_js_1.removeUndefinedKeys)(attachmentParams.params));
+        var encryptedParams = api.encodeAES(JSON.stringify(attachmentParams.params));
+        if (!encryptedParams)
           throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
-        (e.body.append("params", T), u.push(e));
+        (attachmentParams.body.append("params", encryptedParams), requestConfigs.push(attachmentParams));
       }
-      for (y of d) {
-        let e = "string" == typeof y;
-        var A = e
-          ? await (0, utils_js_1.getGifMetaData)(Z, y)
-          : { ...y.metadata, fileName: y.filename };
-        if (A.totalSize > 1024 * M.max_size_share_file_v3 * 1024)
+      for (gifAttachment of gifAttachments) {
+        let isGifPath = "string" == typeof gifAttachment;
+        var gifMetadata = isGifPath
+          ? await (0, utils_js_1.getGifMetaData)(appContext, gifAttachment)
+          : { ...gifAttachment.metadata, fileName: gifAttachment.filename };
+        if (gifMetadata.totalSize > 1024 * shareFileConfig.max_size_share_file_v3 * 1024)
           throw new ZaloApiError_js_1.ZaloApiError(
-            `File ${e ? (0, utils_js_1.getFileName)(y) : y.filename} size exceed maximum size of ${M.max_size_share_file_v3}MB`,
+            `File ${isGifPath ? (0, utils_js_1.getFileName)(gifAttachment) : gifAttachment.filename} size exceed maximum size of ${shareFileConfig.max_size_share_file_v3}MB`,
           );
-        var U = await (async (e, t) => {
-            var r = new form_data_1.default(),
-              e =
-                "string" == typeof e
-                  ? await promises_1.default.readFile(e)
-                  : e.data,
-              e =
-                (r.append("fileContent", e, {
+        var thumbUploadResponse = await (async (gifFile, baseUrl) => {
+            var formData = new form_data_1.default(),
+              fileBuffer =
+                "string" == typeof gifFile
+                  ? await promises_1.default.readFile(gifFile)
+                  : gifFile.data,
+              thumbParams =
+                (formData.append("fileContent", fileBuffer, {
                   filename: "blob",
                   contentType: "image/png",
                 }),
-                { clientId: Date.now(), imei: Z.imei });
-            if ((e = F.encodeAES(JSON.stringify(e))))
+                { clientId: Date.now(), imei: appContext.imei });
+            if ((thumbParams = api.encodeAES(JSON.stringify(thumbParams))))
               return (
-                (t = await F.request(F.makeURL(t + "upthumb?", { params: e }), {
+                (baseUrl = await api.request(api.makeURL(baseUrl + "upthumb?", { params: thumbParams }), {
                   method: "POST",
-                  headers: r.getHeaders(),
-                  body: r.getBuffer(),
+                  headers: formData.getHeaders(),
+                  body: formData.getBuffer(),
                 })),
-                (0, utils_js_1.resolveResponse)(Z, t)
+                (0, utils_js_1.resolveResponse)(appContext, baseUrl)
               );
             throw new ZaloApiError_js_1.ZaloApiError(
               "Failed to encrypt message",
             );
-          })(y, q.attachment[index_js_1.ThreadType.User]),
-          x = new form_data_1.default(),
-          U =
-            (x.append(
+          })(gifAttachment, endpoints.attachment[index_js_1.ThreadType.User]),
+          gifFormData = new form_data_1.default(),
+          gifParams =
+            (gifFormData.append(
               "chunkContent",
-              e ? await promises_1.default.readFile(y) : y.data,
+              isGifPath ? await promises_1.default.readFile(gifAttachment) : gifAttachment.data,
               {
-                filename: e ? (0, utils_js_1.getFileName)(y) : y.filename,
+                filename: isGifPath ? (0, utils_js_1.getFileName)(gifAttachment) : gifAttachment.filename,
                 contentType: "application/octet-stream",
               },
             ),
             {
               clientId: Date.now().toString(),
-              fileName: A.fileName,
-              totalSize: A.totalSize,
-              width: A.width,
-              height: A.height,
-              msg: t,
+              fileName: gifMetadata.fileName,
+              totalSize: gifMetadata.totalSize,
+              width: gifMetadata.width,
+              height: gifMetadata.height,
+              msg: message,
               type: 1,
-              ttl: null != a ? a : 0,
-              visibility: m ? 0 : void 0,
-              toid: m ? void 0 : o,
-              grid: m ? o : void 0,
-              thumb: U.url,
+              ttl: null != timeToLive ? timeToLive : 0,
+              visibility: isGroupThread ? 0 : void 0,
+              toid: isGroupThread ? void 0 : threadId,
+              grid: isGroupThread ? threadId : void 0,
+              thumb: thumbUploadResponse.url,
               checksum: (
-                await (0, utils_js_1.getMd5LargeFileObject)(y, A.totalSize)
+                await (0, utils_js_1.getMd5LargeFileObject)(gifAttachment, gifMetadata.totalSize)
               ).data,
               totalChunk: 1,
               chunkId: 1,
             }),
-          A =
-            (O(U, n),
-            (0, utils_js_1.removeUndefinedKeys)(U),
-            F.encodeAES(JSON.stringify(U)));
-        if (!A)
+          encryptedGifParams =
+            (applyUrgency(gifParams, urgencyLevel),
+            (0, utils_js_1.removeUndefinedKeys)(gifParams),
+            api.encodeAES(JSON.stringify(gifParams)));
+        if (!encryptedGifParams)
           throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
-        u.push({
-          query: { params: A, type: "1" },
-          body: x.getBuffer(),
-          headers: x.getHeaders(),
+        requestConfigs.push({
+          query: { params: encryptedGifParams, type: "1" },
+          body: gifFormData.getBuffer(),
+          headers: gifFormData.getHeaders(),
           fileType: "gif",
         });
       }
-      var E,
-        b = [];
-      for (E of u)
-        b.push({
-          url: F.makeURL(
-            q.attachment[s] + attachmentUrlType[E.fileType],
-            Object.assign({ nretry: "0" }, E.query || {}),
+      var requestConfig,
+        finalRequests = [];
+      for (requestConfig of requestConfigs)
+        finalRequests.push({
+          url: api.makeURL(
+            endpoints.attachment[threadType] + attachmentUrlType[requestConfig.fileType],
+            Object.assign({ nretry: "0" }, requestConfig.query || {}),
           ),
-          body: E.body,
-          headers: "gif" == E.fileType ? E.headers : {},
+          body: requestConfig.body,
+          headers: "gif" == requestConfig.fileType ? requestConfig.headers : {},
         });
-      return b;
+      return finalRequests;
     }
-    return async function (e, t, r = index_js_1.ThreadType.User) {
-      if (!e)
+    return async function (messageInput, threadId, threadType = index_js_1.ThreadType.User) {
+      if (!messageInput)
         throw new ZaloApiError_js_1.ZaloApiError("Missing message content");
-      if (!t) throw new ZaloApiError_js_1.ZaloApiError("Missing threadId");
+      if (!threadId) throw new ZaloApiError_js_1.ZaloApiError("Missing threadId");
       let {
-        msg: i,
-        attachments: a,
-        mentions: n,
-      } = (e = "string" == typeof e ? { msg: e } : e);
-      var o,
-        { quote: s, ttl: l, styles: p, urgency: d } = e;
+        msg: message,
+        attachments: attachmentList,
+        mentions: mentionsList,
+      } = (messageInput = "string" == typeof messageInput ? { msg: messageInput } : messageInput);
+      var fileExtension,
+        { quote: quoteMessage, ttl: timeToLive, styles: textStyles, urgency: urgencyLevel } = messageInput;
       if (
-        (a && !Array.isArray(a) && (a = [a]), !(i || (a && (a, 0 != a.length))))
+        (attachmentList && !Array.isArray(attachmentList) && (attachmentList = [attachmentList]), !(message || (attachmentList && (attachmentList, 0 != attachmentList.length))))
       )
         throw new ZaloApiError_js_1.ZaloApiError("Missing message content");
-      if (a && a.length > M.max_file)
+      if (attachmentList && attachmentList.length > shareFileConfig.max_file)
         throw new ZaloApiError_js_1.ZaloApiError(
-          "Exceed maximum file of " + M.max_file,
+          "Exceed maximum file of " + shareFileConfig.max_file,
         );
-      let m = { message: null, attachment: [] };
+      let result = { message: null, attachment: [] };
       return (
-        a &&
-          0 < a.length &&
-          ((o = (0, utils_js_1.getFileExtension)(
-            "string" == typeof a[0] ? a[0] : a[0].filename,
+        attachmentList &&
+          0 < attachmentList.length &&
+          ((fileExtension = (0, utils_js_1.getFileExtension)(
+            "string" == typeof attachmentList[0] ? attachmentList[0] : attachmentList[0].filename,
           )),
-          ((!(1 == a.length && ["jpg", "jpeg", "png", "webp"].includes(o)) &&
-            0 < i.length) ||
-            (0 < i.length && s)) &&
-            (await f(e, t, r).then(async (e) => {
-              m.message = (await g(e))[0];
+          ((!(1 == attachmentList.length && ["jpg", "jpeg", "png", "webp"].includes(fileExtension)) &&
+            0 < message.length) ||
+            (0 < message.length && quoteMessage)) &&
+            (await buildTextMessage(messageInput, threadId, threadType).then(async (request) => {
+              result.message = (await sendRequests(request))[0];
             }),
-            (i = ""),
-            (n = void 0)),
-          (o = await u(
+            (message = ""),
+            (mentionsList = void 0)),
+          (fileExtension = await buildAttachmentMessage(
             {
-              msg: i,
-              mentions: n,
-              attachments: a,
-              quote: s,
-              ttl: l,
-              styles: p,
-              urgency: d,
+              msg: message,
+              mentions: mentionsList,
+              attachments: attachmentList,
+              quote: quoteMessage,
+              ttl: timeToLive,
+              styles: textStyles,
+              urgency: urgencyLevel,
             },
-            t,
-            r,
+            threadId,
+            threadType,
           )),
-          (m.attachment = await g(o)),
-          (i = "")),
-        0 < i.length && ((s = await f(e, t, r)), (m.message = (await g(s))[0])),
-        m
+          (result.attachment = await sendRequests(fileExtension)),
+          (message = "")),
+        0 < message.length && ((quoteMessage = await buildTextMessage(messageInput, threadId, threadType)), (result.message = (await sendRequests(quoteMessage))[0])),
+        result
       );
     };
   })));

@@ -3,48 +3,48 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.deleteMessageFactory = (0, utils_js_1.apiFactory)()((e, i, d) => {
-  let t = {
-    [index_js_1.ThreadType.User]: d.makeURL(
-      e.zpwServiceMap.chat[0] + "/api/message/delete",
+exports.deleteMessageFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpointUrls = {
+    [index_js_1.ThreadType.User]: api.makeURL(
+      serviceUrls.zpwServiceMap.chat[0] + "/api/message/delete",
     ),
-    [index_js_1.ThreadType.Group]: d.makeURL(
-      e.zpwServiceMap.group[0] + "/api/group/deletemsg",
+    [index_js_1.ThreadType.Group]: api.makeURL(
+      serviceUrls.zpwServiceMap.group[0] + "/api/group/deletemsg",
     ),
   };
-  return async function (e, r = !1) {
-    var { threadId: e, type: o = index_js_1.ThreadType.User, data: s } = e,
-      a = o === index_js_1.ThreadType.Group;
-    if (i.uid == s.uidFrom && !1 === r)
+  return async function (message, onlyMe = !1) {
+    var { threadId, type: threadType = index_js_1.ThreadType.User, data: messageData } = message,
+      isGroupThread = threadType === index_js_1.ThreadType.Group;
+    if (appContext.uid == messageData.uidFrom && !1 === onlyMe)
       throw new ZaloApiError_js_1.ZaloApiError(
         "To delete your message for everyone, use undo api instead",
       );
-    if (!a && !1 === r)
+    if (!isGroupThread && !1 === onlyMe)
       throw new ZaloApiError_js_1.ZaloApiError(
         "Can't delete message for everyone in a private chat",
       );
-    ((s = {
-      [a ? "grid" : "toid"]: e,
+    ((requestParams = {
+      [isGroupThread ? "grid" : "toid"]: threadId,
       cliMsgId: Date.now(),
       msgs: [
         {
-          cliMsgId: s.cliMsgId,
-          globalMsgId: s.msgId,
-          ownerId: s.uidFrom,
-          destId: e,
+          cliMsgId: messageData.cliMsgId,
+          globalMsgId: messageData.msgId,
+          ownerId: messageData.uidFrom,
+          destId: threadId,
         },
       ],
-      onlyMe: r ? 1 : 0,
+      onlyMe: onlyMe ? 1 : 0,
     }),
-      a || (s.imei = i.imei),
-      (e = d.encodeAES(JSON.stringify(s))));
-    if (e)
+      isGroupThread || (requestParams.imei = appContext.imei),
+      (encryptedParams = api.encodeAES(JSON.stringify(requestParams))));
+    if (encryptedParams)
       return (
-        (r = await d.request(t[o], {
+        (response = await api.request(endpointUrls[threadType], {
           method: "POST",
-          body: new URLSearchParams({ params: e }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        d.resolve(r)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
   };

@@ -2,24 +2,24 @@
   (exports.addUserToGroupFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.addUserToGroupFactory = (0, utils_js_1.apiFactory)()((r, a, o) => {
-  let i = o.makeURL(r.zpwServiceMap.group[0] + "/api/group/invite/v2");
-  return async function (r, e) {
-    var e = {
-        grid: e,
-        members: (r = Array.isArray(r) ? r : [r]),
-        memberTypes: r.map(() => -1),
-        imei: a.imei,
-        clientLang: a.language,
+exports.addUserToGroupFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.group[0] + "/api/group/invite/v2");
+  return async function (memberIds, groupId) {
+    var requestParams = {
+        grid: groupId,
+        members: (memberIds = Array.isArray(memberIds) ? memberIds : [memberIds]),
+        memberTypes: memberIds.map(() => -1),
+        imei: appContext.imei,
+        clientLang: appContext.language,
       },
-      r = o.encodeAES(JSON.stringify(e));
-    if (r)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await o.request(i, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        o.resolve(e)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

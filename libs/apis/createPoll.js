@@ -2,31 +2,31 @@
   (exports.createPollFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.createPollFactory = (0, utils_js_1.apiFactory)()((e, r, i) => {
-  let t = i.makeURL(e.zpwServiceMap.group[0] + "/api/poll/create");
-  return async function (e, o) {
-    var o = {
-        group_id: o,
-        question: e.question,
-        options: e.options,
-        expired_time: null != (o = e.expiredTime) ? o : 0,
+exports.createPollFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.group[0] + "/api/poll/create");
+  return async function (pollOptions, groupId) {
+    var requestParams = {
+        group_id: groupId,
+        question: pollOptions.question,
+        options: pollOptions.options,
+        expired_time: null != (groupId = pollOptions.expiredTime) ? groupId : 0,
         pinAct: !1,
-        allow_multi_choices: !!e.allowMultiChoices,
-        allow_add_new_option: !!e.allowAddNewOption,
-        is_hide_vote_preview: !!e.hideVotePreview,
-        is_anonymous: !!e.isAnonymous,
+        allow_multi_choices: !!pollOptions.allowMultiChoices,
+        allow_add_new_option: !!pollOptions.allowAddNewOption,
+        is_hide_vote_preview: !!pollOptions.hideVotePreview,
+        is_anonymous: !!pollOptions.isAnonymous,
         poll_type: 0,
         src: 1,
-        imei: r.imei,
+        imei: appContext.imei,
       },
-      e = i.encodeAES(JSON.stringify(o));
-    if (e)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (o = await i.request(t, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: e }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        i.resolve(o)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

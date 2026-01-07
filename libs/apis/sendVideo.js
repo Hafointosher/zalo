@@ -3,52 +3,42 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.sendVideoFactory = (0, utils_js_1.apiFactory)()((e, c, m) => {
-  let w = {
-    [index_js_1.ThreadType.User]: m.makeURL(
-      e.zpwServiceMap.file[0] + "/api/message/forward",
+exports.sendVideoFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = {
+    [index_js_1.ThreadType.User]: api.makeURL(
+      serviceUrls.zpwServiceMap.file[0] + "/api/message/forward",
     ),
-    [index_js_1.ThreadType.Group]: m.makeURL(
-      e.zpwServiceMap.file[0] + "/api/group/forward",
+    [index_js_1.ThreadType.Group]: api.makeURL(
+      serviceUrls.zpwServiceMap.file[0] + "/api/group/forward",
     ),
   };
-  return async function (e, r, i = index_js_1.ThreadType.User) {
-    let t,
-      o,
-      s,
-      l,
-      n,
-      a,
-      d,
-      p,
-      u,
-      h,
-      _ = 0;
-    var y = Date.now();
+  return async function (videoData, threadId, threadType = index_js_1.ThreadType.User) {
+    let fileSize = 0;
+    var clientId = Date.now();
     try {
-      var g = await m.request(e.videoUrl, { method: "HEAD" }, !0);
-      g.ok && (_ = parseInt(g.headers.get("content-length") || "0"));
-    } catch (e) {
+      var response = await api.request(videoData.videoUrl, { method: "HEAD" }, !0);
+      response.ok && (fileSize = parseInt(response.headers.get("content-length") || "0"));
+    } catch (err) {
       throw new ZaloApiError_js_1.ZaloApiError(
         "Unable to get video content: " +
-          (e instanceof Error ? e.message : String(e)),
+          (err instanceof Error ? err.message : String(err)),
       );
     }
-    g =
-      i === index_js_1.ThreadType.User
+    var requestParams =
+      threadType === index_js_1.ThreadType.User
         ? {
-            toId: r,
-            clientId: String(y),
-            ttl: null != (t = e.ttl) ? t : 0,
+            toId: threadId,
+            clientId: String(clientId),
+            ttl: videoData.ttl ?? 0,
             zsource: 704,
             msgType: 5,
             msgInfo: JSON.stringify({
-              videoUrl: e.videoUrl,
-              thumbUrl: e.thumbnailUrl,
-              duration: null != (o = e.duration) ? o : 0,
-              width: null != (s = e.width) ? s : 1280,
-              height: null != (l = e.height) ? l : 720,
-              fileSize: _,
+              videoUrl: videoData.videoUrl,
+              thumbUrl: videoData.thumbnailUrl,
+              duration: videoData.duration ?? 0,
+              width: videoData.width ?? 1280,
+              height: videoData.height ?? 720,
+              fileSize: fileSize,
               properties: {
                 color: -1,
                 size: -1,
@@ -56,24 +46,24 @@ exports.sendVideoFactory = (0, utils_js_1.apiFactory)()((e, c, m) => {
                 subType: 0,
                 ext: { sSrcType: -1, sSrcStr: "", msg_warning_type: 0 },
               },
-              title: null != (n = e.msg) ? n : "",
+              title: videoData.msg ?? "",
             }),
-            imei: c.imei,
+            imei: appContext.imei,
           }
         : {
-            grid: r,
+            grid: threadId,
             visibility: 0,
-            clientId: String(y),
-            ttl: null != (a = e.ttl) ? a : 0,
+            clientId: String(clientId),
+            ttl: videoData.ttl ?? 0,
             zsource: 704,
             msgType: 5,
             msgInfo: JSON.stringify({
-              videoUrl: e.videoUrl,
-              thumbUrl: e.thumbnailUrl,
-              duration: null != (d = e.duration) ? d : 0,
-              width: null != (p = e.width) ? p : 1280,
-              height: null != (u = e.height) ? u : 720,
-              fileSize: _,
+              videoUrl: videoData.videoUrl,
+              thumbUrl: videoData.thumbnailUrl,
+              duration: videoData.duration ?? 0,
+              width: videoData.width ?? 1280,
+              height: videoData.height ?? 720,
+              fileSize: fileSize,
               properties: {
                 color: -1,
                 size: -1,
@@ -81,20 +71,20 @@ exports.sendVideoFactory = (0, utils_js_1.apiFactory)()((e, c, m) => {
                 subType: 0,
                 ext: { sSrcType: -1, sSrcStr: "", msg_warning_type: 0 },
               },
-              title: null != (h = e.msg) ? h : "",
+              title: videoData.msg ?? "",
             }),
-            imei: c.imei,
+            imei: appContext.imei,
           };
-    if (i !== index_js_1.ThreadType.User && i !== index_js_1.ThreadType.Group)
+    if (threadType !== index_js_1.ThreadType.User && threadType !== index_js_1.ThreadType.Group)
       throw new ZaloApiError_js_1.ZaloApiError("Thread type is invalid");
-    r = m.encodeAES(JSON.stringify(g));
-    if (r)
+    var encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (y = await m.request(w[i], {
+        (response = await api.request(endpoint[threadType], {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        m.resolve(y)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

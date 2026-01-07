@@ -3,68 +3,68 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.sendVoiceFactory = (0, utils_js_1.apiFactory)()((e, n, p) => {
-  let d = {
-    [index_js_1.ThreadType.User]: p.makeURL(
-      e.zpwServiceMap.file[0] + "/api/message/forward",
+exports.sendVoiceFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = {
+    [index_js_1.ThreadType.User]: api.makeURL(
+      serviceUrls.zpwServiceMap.file[0] + "/api/message/forward",
     ),
-    [index_js_1.ThreadType.Group]: p.makeURL(
-      e.zpwServiceMap.file[0] + "/api/group/forward",
+    [index_js_1.ThreadType.Group]: api.makeURL(
+      serviceUrls.zpwServiceMap.file[0] + "/api/group/forward",
     ),
   };
-  return async function (e, r, i = index_js_1.ThreadType.User) {
-    let o,
-      t,
-      s = null;
-    var a = Date.now().toString();
+  return async function (voiceData, threadId, threadType = index_js_1.ThreadType.User) {
+    let ttlUser,
+      ttlGroup,
+      fileSize = null;
+    var clientId = Date.now().toString();
     try {
-      var l = await p.request(e.voiceUrl, { method: "HEAD" }, !0);
-      l.ok && (s = parseInt(l.headers.get("content-length") || "0"));
+      var response = await api.request(voiceData.voiceUrl, { method: "HEAD" }, !0);
+      response.ok && (fileSize = parseInt(response.headers.get("content-length") || "0"));
     } catch (e) {
       throw new ZaloApiError_js_1.ZaloApiError(
         "Unable to get voice content: " +
           (e instanceof Error ? e.message : String(e)),
       );
     }
-    l =
-      i === index_js_1.ThreadType.User
+    var requestParams =
+      threadType === index_js_1.ThreadType.User
         ? {
-            toId: r,
-            ttl: null != (o = e.ttl) ? o : 0,
+            toId: threadId,
+            ttl: null != (ttlUser = voiceData.ttl) ? ttlUser : 0,
             zsource: -1,
             msgType: 3,
-            clientId: a,
+            clientId: clientId,
             msgInfo: JSON.stringify({
-              voiceUrl: e.voiceUrl,
-              m4aUrl: e.voiceUrl,
-              fileSize: null != s ? s : 0,
+              voiceUrl: voiceData.voiceUrl,
+              m4aUrl: voiceData.voiceUrl,
+              fileSize: null != fileSize ? fileSize : 0,
             }),
-            imei: n.imei,
+            imei: appContext.imei,
           }
         : {
-            grid: r,
+            grid: threadId,
             visibility: 0,
-            ttl: null != (t = e.ttl) ? t : 0,
+            ttl: null != (ttlGroup = voiceData.ttl) ? ttlGroup : 0,
             zsource: -1,
             msgType: 3,
-            clientId: a,
+            clientId: clientId,
             msgInfo: JSON.stringify({
-              voiceUrl: e.voiceUrl,
-              m4aUrl: e.voiceUrl,
-              fileSize: null != s ? s : 0,
+              voiceUrl: voiceData.voiceUrl,
+              m4aUrl: voiceData.voiceUrl,
+              fileSize: null != fileSize ? fileSize : 0,
             }),
-            imei: n.imei,
+            imei: appContext.imei,
           };
-    if (i !== index_js_1.ThreadType.User && i !== index_js_1.ThreadType.Group)
+    if (threadType !== index_js_1.ThreadType.User && threadType !== index_js_1.ThreadType.Group)
       throw new ZaloApiError_js_1.ZaloApiError("Thread type is invalid");
-    r = p.encodeAES(JSON.stringify(l));
-    if (r)
+    var encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (a = await p.request(d[i], {
+        (response = await api.request(endpoint[threadType], {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        p.resolve(a)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

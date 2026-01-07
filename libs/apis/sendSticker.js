@@ -3,46 +3,46 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.sendStickerFactory = (0, utils_js_1.apiFactory)()((r, s, t) => {
-  let a = {
-    [index_js_1.ThreadType.User]: t.makeURL(
-      r.zpwServiceMap.chat[0] + "/api/message/sticker",
+exports.sendStickerFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoints = {
+    [index_js_1.ThreadType.User]: api.makeURL(
+      serviceUrls.zpwServiceMap.chat[0] + "/api/message/sticker",
       { nretry: "0" },
     ),
-    [index_js_1.ThreadType.Group]: t.makeURL(
-      r.zpwServiceMap.group[0] + "/api/group/sticker",
+    [index_js_1.ThreadType.Group]: api.makeURL(
+      serviceUrls.zpwServiceMap.group[0] + "/api/group/sticker",
       { nretry: "0" },
     ),
   };
-  return async function (r, e, i = index_js_1.ThreadType.User) {
-    if (!r) throw new ZaloApiError_js_1.ZaloApiError("Missing sticker");
-    if (!e) throw new ZaloApiError_js_1.ZaloApiError("Missing threadId");
-    if (!r.id) throw new ZaloApiError_js_1.ZaloApiError("Missing sticker id");
-    if (!r.cateId)
+  return async function (sticker, threadId, threadType = index_js_1.ThreadType.User) {
+    if (!sticker) throw new ZaloApiError_js_1.ZaloApiError("Missing sticker");
+    if (!threadId) throw new ZaloApiError_js_1.ZaloApiError("Missing threadId");
+    if (!sticker.id) throw new ZaloApiError_js_1.ZaloApiError("Missing sticker id");
+    if (!sticker.cateId)
       throw new ZaloApiError_js_1.ZaloApiError("Missing sticker cateId");
-    if (!r.type)
+    if (!sticker.type)
       throw new ZaloApiError_js_1.ZaloApiError("Missing sticker type");
-    var o = i === index_js_1.ThreadType.Group,
-      r = {
-        stickerId: r.id,
-        cateId: r.cateId,
-        type: r.type,
+    var isGroupThread = threadType === index_js_1.ThreadType.Group,
+      stickerData = {
+        stickerId: sticker.id,
+        cateId: sticker.cateId,
+        type: sticker.type,
         clientId: Date.now(),
-        imei: s.imei,
+        imei: appContext.imei,
         zsource: 101,
-        toid: o ? void 0 : e,
-        grid: o ? e : void 0,
+        toid: isGroupThread ? void 0 : threadId,
+        grid: isGroupThread ? threadId : void 0,
       },
-      o =
-        ((0, utils_js_1.removeUndefinedKeys)(r),
-        t.encodeAES(JSON.stringify(r)));
-    if (o)
+      encryptedParams =
+        ((0, utils_js_1.removeUndefinedKeys)(stickerData),
+        api.encodeAES(JSON.stringify(stickerData)));
+    if (encryptedParams)
       return (
-        (e = await t.request(a[i], {
+        (response = await api.request(endpoints[threadType], {
           method: "POST",
-          body: new URLSearchParams({ params: o }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        t.resolve(e)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
   };

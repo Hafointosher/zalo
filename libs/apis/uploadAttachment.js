@@ -1,7 +1,7 @@
 var __importDefault =
   (this && this.__importDefault) ||
-  function (e) {
-    return e && e.__esModule ? e : { default: e };
+  function (mod) {
+    return mod && mod.__esModule ? mod : { default: mod };
   };
 (Object.defineProperty(exports, "__esModule", { value: !0 }),
   (exports.uploadAttachmentFactory = void 0));
@@ -15,186 +15,186 @@ let form_data_1 = __importDefault(require("form-data")),
     video: "asyncfile/upload",
     others: "asyncfile/upload",
   };
-exports.uploadAttachmentFactory = (0, utils_js_1.apiFactory)()((e, A, x) => {
-  let S = e.zpwServiceMap.file[0] + "/api",
-    Z = A.settings.features.sharefile;
-  function v(e) {
-    return e > 1024 * Z.max_size_share_file_v3 * 1024;
+exports.uploadAttachmentFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let fileServiceBaseUrl = serviceUrls.zpwServiceMap.file[0] + "/api",
+    shareFileConfig = appContext.settings.features.sharefile;
+  function exceedsMaxSize(fileSize) {
+    return fileSize > 1024 * shareFileConfig.max_size_share_file_v3 * 1024;
   }
-  return async function (e, a, i = index_js_1.ThreadType.User) {
-    if (!e) throw new ZaloApiError_js_1.ZaloApiError("Missing sources");
-    if (0 == (e = Array.isArray(e) ? e : [e]).length)
+  return async function (sources, threadId, threadType = index_js_1.ThreadType.User) {
+    if (!sources) throw new ZaloApiError_js_1.ZaloApiError("Missing sources");
+    if (0 == (sources = Array.isArray(sources) ? sources : [sources]).length)
       throw new ZaloApiError_js_1.ZaloApiError("Missing sources");
-    if (e.length > Z.max_file)
+    if (sources.length > shareFileConfig.max_file)
       throw new ZaloApiError_js_1.ZaloApiError(
-        "Exceed maximum file of " + Z.max_file,
+        "Exceed maximum file of " + shareFileConfig.max_file,
       );
-    if (!a) throw new ZaloApiError_js_1.ZaloApiError("Missing threadId");
-    var r,
-      t,
-      l = A.settings.features.sharefile.chunk_size_file,
-      o = i == index_js_1.ThreadType.Group,
-      s = [],
-      p = S + `/${o ? "group" : "message"}/`,
-      n = o ? "11" : "2";
-    let f = Date.now();
-    for (r of e) {
-      var m = "string" == typeof r,
-        _ = "object" == typeof r && r.data instanceof Buffer;
-      if (!m && !_)
+    if (!threadId) throw new ZaloApiError_js_1.ZaloApiError("Missing threadId");
+    var source,
+      extForCheck,
+      chunkSize = appContext.settings.features.sharefile.chunk_size_file,
+      isGroupThread = threadType == index_js_1.ThreadType.Group,
+      uploadDataList = [],
+      uploadEndpoint = fileServiceBaseUrl + `/${isGroupThread ? "group" : "message"}/`,
+      typeParam = isGroupThread ? "11" : "2";
+    let clientIdCounter = Date.now();
+    for (source of sources) {
+      var isFilePath = "string" == typeof source,
+        isBufferData = "object" == typeof source && source.data instanceof Buffer;
+      if (!isFilePath && !isBufferData)
         throw new ZaloApiError_js_1.ZaloApiError("Invalid source type");
-      if (!m && !r.filename)
+      if (!isFilePath && !source.filename)
         throw new ZaloApiError_js_1.ZaloApiError("Missing filename");
-      if (m && !node_fs_1.default.existsSync(r))
+      if (isFilePath && !node_fs_1.default.existsSync(source))
         throw new ZaloApiError_js_1.ZaloApiError("File not found");
-      var _ = (0, utils_js_1.getFileExtension)(
-          m ? r : r.filename,
+      var fileExtension = (0, utils_js_1.getFileExtension)(
+          isFilePath ? source : source.filename,
         ).toLowerCase(),
-        u = m ? (0, utils_js_1.getFileName)(r) : r.filename;
-      if (0 == ((t = _), -1 == Z.restricted_ext_file.indexOf(t)))
+        fileName = isFilePath ? (0, utils_js_1.getFileName)(source) : source.filename;
+      if (0 == ((extForCheck = fileExtension), -1 == shareFileConfig.restricted_ext_file.indexOf(extForCheck)))
         throw new ZaloApiError_js_1.ZaloApiError(
-          `File extension "${_}" is not allowed`,
+          `File extension "${fileExtension}" is not allowed`,
         );
-      var d = {
-        filePath: m ? r : r.filename,
+      var uploadData = {
+        filePath: isFilePath ? source : source.filename,
         chunkContent: [],
         params: {},
-        source: r,
+        source: source,
       };
-      switch ((o ? (d.params.grid = a) : (d.params.toid = a), _)) {
+      switch ((isGroupThread ? (uploadData.params.grid = threadId) : (uploadData.params.toid = threadId), fileExtension)) {
         case "jpg":
         case "jpeg":
         case "png":
         case "webp":
-          var h = m
-            ? await (0, utils_js_1.getImageMetaData)(A, r)
-            : { ...r.metadata, fileName: u };
-          if (v(h.totalSize))
+          var imageMetadata = isFilePath
+            ? await (0, utils_js_1.getImageMetaData)(appContext, source)
+            : { ...source.metadata, fileName: fileName };
+          if (exceedsMaxSize(imageMetadata.totalSize))
             throw new ZaloApiError_js_1.ZaloApiError(
-              `File ${u} size exceed maximum size of ${Z.max_size_share_file_v3}MB`,
+              `File ${fileName} size exceed maximum size of ${shareFileConfig.max_size_share_file_v3}MB`,
             );
-          ((d.fileData = h),
-            (d.fileType = "image"),
-            (d.params.totalChunk = Math.ceil(d.fileData.totalSize / l)),
-            (d.params.fileName = u),
-            (d.params.clientId = f++),
-            (d.params.totalSize = h.totalSize),
-            (d.params.imei = A.imei),
-            (d.params.isE2EE = 0),
-            (d.params.jxl = 0),
-            (d.params.chunkId = 1));
+          ((uploadData.fileData = imageMetadata),
+            (uploadData.fileType = "image"),
+            (uploadData.params.totalChunk = Math.ceil(uploadData.fileData.totalSize / chunkSize)),
+            (uploadData.params.fileName = fileName),
+            (uploadData.params.clientId = clientIdCounter++),
+            (uploadData.params.totalSize = imageMetadata.totalSize),
+            (uploadData.params.imei = appContext.imei),
+            (uploadData.params.isE2EE = 0),
+            (uploadData.params.jxl = 0),
+            (uploadData.params.chunkId = 1));
           break;
         case "mp4":
-          h = m ? await (0, utils_js_1.getFileSize)(r) : r.metadata.totalSize;
-          if (v(h))
+          var videoFileSize = isFilePath ? await (0, utils_js_1.getFileSize)(source) : source.metadata.totalSize;
+          if (exceedsMaxSize(videoFileSize))
             throw new ZaloApiError_js_1.ZaloApiError(
-              `File ${u} size exceed maximum size of ${Z.max_size_share_file_v3}MB`,
+              `File ${fileName} size exceed maximum size of ${shareFileConfig.max_size_share_file_v3}MB`,
             );
-          ((d.fileType = "video"),
-            (d.fileData = { fileName: u, totalSize: h }),
-            (d.params.totalChunk = Math.ceil(d.fileData.totalSize / l)),
-            (d.params.fileName = u),
-            (d.params.clientId = f++),
-            (d.params.totalSize = h),
-            (d.params.imei = A.imei),
-            (d.params.isE2EE = 0),
-            (d.params.jxl = 0),
-            (d.params.chunkId = 1));
+          ((uploadData.fileType = "video"),
+            (uploadData.fileData = { fileName: fileName, totalSize: videoFileSize }),
+            (uploadData.params.totalChunk = Math.ceil(uploadData.fileData.totalSize / chunkSize)),
+            (uploadData.params.fileName = fileName),
+            (uploadData.params.clientId = clientIdCounter++),
+            (uploadData.params.totalSize = videoFileSize),
+            (uploadData.params.imei = appContext.imei),
+            (uploadData.params.isE2EE = 0),
+            (uploadData.params.jxl = 0),
+            (uploadData.params.chunkId = 1));
           break;
         default:
-          var c = m
-            ? await (0, utils_js_1.getFileSize)(r)
-            : r.metadata.totalSize;
-          if (v(c))
+          var otherFileSize = isFilePath
+            ? await (0, utils_js_1.getFileSize)(source)
+            : source.metadata.totalSize;
+          if (exceedsMaxSize(otherFileSize))
             throw new ZaloApiError_js_1.ZaloApiError(
-              `File ${u} size exceed maximum size of ${Z.max_size_share_file_v3}MB`,
+              `File ${fileName} size exceed maximum size of ${shareFileConfig.max_size_share_file_v3}MB`,
             );
-          ((d.fileType = "others"),
-            (d.fileData = { fileName: u, totalSize: c }),
-            (d.params.totalChunk = Math.ceil(d.fileData.totalSize / l)),
-            (d.params.fileName = u),
-            (d.params.clientId = f++),
-            (d.params.totalSize = c),
-            (d.params.imei = A.imei),
-            (d.params.isE2EE = 0),
-            (d.params.jxl = 0),
-            (d.params.chunkId = 1));
+          ((uploadData.fileType = "others"),
+            (uploadData.fileData = { fileName: fileName, totalSize: otherFileSize }),
+            (uploadData.params.totalChunk = Math.ceil(uploadData.fileData.totalSize / chunkSize)),
+            (uploadData.params.fileName = fileName),
+            (uploadData.params.clientId = clientIdCounter++),
+            (uploadData.params.totalSize = otherFileSize),
+            (uploadData.params.imei = appContext.imei),
+            (uploadData.params.isE2EE = 0),
+            (uploadData.params.jxl = 0),
+            (uploadData.params.chunkId = 1));
       }
-      var w = m ? await node_fs_1.default.promises.readFile(r) : r.data;
-      for (let e = 0; e < d.params.totalChunk; e++) {
-        var E = new form_data_1.default(),
-          j = w.subarray(e * l, (e + 1) * l);
-        (E.append("chunkContent", j, {
-          filename: u,
+      var fileBuffer = isFilePath ? await node_fs_1.default.promises.readFile(source) : source.data;
+      for (let i = 0; i < uploadData.params.totalChunk; i++) {
+        var formData = new form_data_1.default(),
+          chunkData = fileBuffer.subarray(i * chunkSize, (i + 1) * chunkSize);
+        (formData.append("chunkContent", chunkData, {
+          filename: fileName,
           contentType: "application/octet-stream",
         }),
-          (d.chunkContent[e] = E));
+          (uploadData.chunkContent[i] = formData));
       }
-      s.push(d);
+      uploadDataList.push(uploadData);
     }
-    let g = [],
-      y = [];
-    for (let r of s)
-      for (let e = 0; e < r.params.totalChunk; e++) {
-        var z = x.encodeAES(JSON.stringify(r.params));
-        if (!z)
+    let uploadPromises = [],
+      uploadResults = [];
+    for (let fileUpload of uploadDataList)
+      for (let i = 0; i < fileUpload.params.totalChunk; i++) {
+        var encryptedParams = api.encodeAES(JSON.stringify(fileUpload.params));
+        if (!encryptedParams)
           throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
-        (g.push(
-          x
+        (uploadPromises.push(
+          api
             .request(
-              x.makeURL(p + urlType[r.fileType], { type: n, params: z }),
+              api.makeURL(uploadEndpoint + urlType[fileUpload.fileType], { type: typeParam, params: encryptedParams }),
               {
                 method: "POST",
-                headers: r.chunkContent[e].getHeaders(),
-                body: r.chunkContent[e].getBuffer(),
+                headers: fileUpload.chunkContent[i].getHeaders(),
+                body: fileUpload.chunkContent[i].getBuffer(),
               },
             )
-            .then(async (e) => {
-              let i = await (0, utils_js_1.resolveResponse)(A, e);
-              i &&
-                "-1" != i.fileId &&
-                "-1" != i.photoId &&
-                (await new Promise((a) => {
-                  var e;
-                  (("video" != r.fileType && "others" != r.fileType) ||
-                    A.uploadCallbacks.set(i.fileId.toString(), async (e) => {
-                      e = {
-                        fileType: r.fileType,
-                        ...i,
-                        ...e,
-                        totalSize: r.fileData.totalSize,
-                        fileName: r.fileData.fileName,
+            .then(async (response) => {
+              let uploadResponse = await (0, utils_js_1.resolveResponse)(appContext, response);
+              uploadResponse &&
+                "-1" != uploadResponse.fileId &&
+                "-1" != uploadResponse.photoId &&
+                (await new Promise((resolve) => {
+                  var imageResult;
+                  (("video" != fileUpload.fileType && "others" != fileUpload.fileType) ||
+                    appContext.uploadCallbacks.set(uploadResponse.fileId.toString(), async (callbackData) => {
+                      callbackData = {
+                        fileType: fileUpload.fileType,
+                        ...uploadResponse,
+                        ...callbackData,
+                        totalSize: fileUpload.fileData.totalSize,
+                        fileName: fileUpload.fileData.fileName,
                         checksum: (
                           await (0, utils_js_1.getMd5LargeFileObject)(
-                            r.source,
-                            r.fileData.totalSize,
+                            fileUpload.source,
+                            fileUpload.fileData.totalSize,
                           )
                         ).data,
                       };
-                      (y.push(e), a());
+                      (uploadResults.push(callbackData), resolve());
                     }),
-                    "image" == r.fileType &&
-                      ((e = {
+                    "image" == fileUpload.fileType &&
+                      ((imageResult = {
                         fileType: "image",
-                        width: r.fileData.width,
-                        height: r.fileData.height,
-                        totalSize: r.fileData.totalSize,
-                        hdSize: r.fileData.totalSize,
-                        finished: i.finished,
-                        normalUrl: i.normalUrl,
-                        hdUrl: i.hdUrl,
-                        thumbUrl: i.thumbUrl,
-                        chunkId: i.chunkId,
-                        photoId: i.photoId,
-                        clientFileId: i.clientFileId,
+                        width: fileUpload.fileData.width,
+                        height: fileUpload.fileData.height,
+                        totalSize: fileUpload.fileData.totalSize,
+                        hdSize: fileUpload.fileData.totalSize,
+                        finished: uploadResponse.finished,
+                        normalUrl: uploadResponse.normalUrl,
+                        hdUrl: uploadResponse.hdUrl,
+                        thumbUrl: uploadResponse.thumbUrl,
+                        chunkId: uploadResponse.chunkId,
+                        photoId: uploadResponse.photoId,
+                        clientFileId: uploadResponse.clientFileId,
                       }),
-                      y.push(e),
-                      a()));
+                      uploadResults.push(imageResult),
+                      resolve()));
                 }));
             }),
         ),
-          r.params.chunkId++);
+          fileUpload.params.chunkId++);
       }
-    return (await Promise.all(g), y);
+    return (await Promise.all(uploadPromises), uploadResults);
   };
 });

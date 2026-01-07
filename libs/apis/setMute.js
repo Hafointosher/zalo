@@ -16,39 +16,41 @@ var MuteDuration, MuteAction;
   ((e) => {
     ((e[(e.MUTE = 1)] = "MUTE"), (e[(e.UNMUTE = 3)] = "UNMUTE"));
   })(MuteAction || (exports.MuteAction = MuteAction = {})),
-  (exports.setMuteFactory = (0, utils_js_1.apiFactory)()((e, u, s) => {
-    let n = s.makeURL(
-      e.zpwServiceMap.profile[0] + "/api/social/profile/setmute",
+  (exports.setMuteFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+    let endpoint = api.makeURL(
+      serviceUrls.zpwServiceMap.profile[0] + "/api/social/profile/setmute",
     );
-    return async function (e = {}, t, r = index_js_1.ThreadType.User) {
-      var { duration: e = MuteDuration.FOREVER, action: o = MuteAction.MUTE } =
-        e;
-      let i;
-      var a = {
-          toid: t,
-          duration: (i =
-            o === MuteAction.UNMUTE || e === MuteDuration.FOREVER
+    return async function (options = {}, threadId, threadType = index_js_1.ThreadType.User) {
+      var { duration: muteDuration = MuteDuration.FOREVER, action: muteAction = MuteAction.MUTE } =
+        options;
+      let calculatedDuration;
+      var requestParams = {
+          toid: threadId,
+          duration: (calculatedDuration =
+            muteAction === MuteAction.UNMUTE || muteDuration === MuteDuration.FOREVER
               ? -1
-              : e === MuteDuration.UNTIL_8AM
-                ? ((t = new Date()),
-                  (a = new Date(t)).setHours(8, 0, 0, 0),
-                  8 <= t.getHours() && a.setDate(a.getDate() + 1),
-                  Math.floor((a.getTime() - t.getTime()) / 1e3))
-                : e),
-          action: o,
+              : muteDuration === MuteDuration.UNTIL_8AM
+                ? ((now = new Date()),
+                  (target = new Date(now)).setHours(8, 0, 0, 0),
+                  8 <= now.getHours() && target.setDate(target.getDate() + 1),
+                  Math.floor((target.getTime() - now.getTime()) / 1e3))
+                : muteDuration),
+          action: muteAction,
           startTime: Math.floor(Date.now() / 1e3),
-          muteType: r === index_js_1.ThreadType.User ? 1 : 2,
-          imei: u.imei,
+          muteType: threadType === index_js_1.ThreadType.User ? 1 : 2,
+          imei: appContext.imei,
         },
-        t = s.encodeAES(JSON.stringify(a));
-      if (t)
+        now, target,
+        encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+      if (encryptedParams)
         return (
-          (e = await s.request(n, {
+          (response = await api.request(endpoint, {
             method: "POST",
-            body: new URLSearchParams({ params: t }),
+            body: new URLSearchParams({ params: encryptedParams }),
           })),
-          s.resolve(e)
+          api.resolve(response)
         );
+      var response;
       throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
     };
   })));

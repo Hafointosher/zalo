@@ -2,25 +2,25 @@
   (exports.sendFriendRequestFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.sendFriendRequestFactory = (0, utils_js_1.apiFactory)()((r, i, s) => {
-  let a = s.makeURL(r.zpwServiceMap.friend[0] + "/api/friend/sendreq");
-  return async function (r, e) {
-    var r = {
-        toid: e,
-        msg: r,
+exports.sendFriendRequestFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let url = api.makeURL(serviceUrls.zpwServiceMap.friend[0] + "/api/friend/sendreq");
+  return async function (message, userId) {
+    var params = {
+        toid: userId,
+        msg: message,
         reqsrc: 30,
-        imei: i.imei,
-        language: i.language,
-        srcParams: JSON.stringify({ uidTo: e }),
+        imei: appContext.imei,
+        language: appContext.language,
+        srcParams: JSON.stringify({ uidTo: userId }),
       },
-      e = s.encodeAES(JSON.stringify(r));
-    if (e)
+      encryptedParams = api.encodeAES(JSON.stringify(params));
+    if (encryptedParams)
       return (
-        (r = await s.request(a, {
+        (response = await api.request(url, {
           method: "POST",
-          body: new URLSearchParams({ params: e }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        s.resolve(r)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };
