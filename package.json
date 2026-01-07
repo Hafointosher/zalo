@@ -1,0 +1,19 @@
+{
+  "name": "n8n-zalo-deobfuscated",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "deobfuscator": "^2.4.5",
+    "js-beautify": "^1.15.4",
+    "prettier": "^3.7.4",
+    "synchrony": "^0.10.2"
+  }
+}
