@@ -2,24 +2,24 @@
   (exports.updateCatalogFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.updateCatalogFactory = (0, utils_js_1.apiFactory)()((a, r, e) => {
-  let o = e.makeURL(
-    a.zpwServiceMap.catalog[0] + "/api/prodcatalog/catalog/update",
+exports.updateCatalogFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.catalog[0] + "/api/prodcatalog/catalog/update",
   );
-  return async function (a) {
-    var a = {
-        catalog_id: a.catalogId,
-        catalog_name: a.catalogName,
+  return async function (options) {
+    var requestParams = {
+        catalog_id: options.catalogId,
+        catalog_name: options.catalogName,
         catalog_photo: "",
       },
-      a = e.encodeAES(JSON.stringify(a));
-    if (a)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (a = await e.request(o, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: a }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        e.resolve(a)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

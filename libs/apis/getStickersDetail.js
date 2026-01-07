@@ -2,30 +2,30 @@
   (exports.getStickersDetailFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getStickersDetailFactory = (0, utils_js_1.apiFactory)()((r, i, s) => {
-  let t = s.makeURL(
-    r.zpwServiceMap.sticker + "/api/message/sticker/sticker_detail",
+exports.getStickersDetailFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(
+    serviceUrls.zpwServiceMap.sticker + "/api/message/sticker/sticker_detail",
   );
-  return async function (r) {
-    if (!r) throw new ZaloApiError_js_1.ZaloApiError("Missing sticker id");
-    if (0 == (r = Array.isArray(r) ? r : [r]).length)
+  return async function (stickerIds) {
+    if (!stickerIds) throw new ZaloApiError_js_1.ZaloApiError("Missing sticker id");
+    if (0 == (stickerIds = Array.isArray(stickerIds) ? stickerIds : [stickerIds]).length)
       throw new ZaloApiError_js_1.ZaloApiError("Missing sticker id");
-    let e = [];
-    r = r.map((r) =>
-      (async (r) => {
-        if (((r = { sid: r }), (r = s.encodeAES(JSON.stringify(r)))))
+    let results = [];
+    stickerPromises = stickerIds.map((stickerId) =>
+      (async (stickerId) => {
+        if (((requestParams = { sid: stickerId }), (encryptedParams = api.encodeAES(JSON.stringify(requestParams)))))
           return (
-            (r = await s.request(s.makeURL(t, { params: r }))),
-            (0, utils_js_1.resolveResponse)(i, r)
+            (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }))),
+            (0, utils_js_1.resolveResponse)(appContext, response)
           );
         throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt message");
-      })(r),
+      })(stickerId),
     );
     return (
-      (await Promise.allSettled(r)).forEach((r) => {
-        "fulfilled" === r.status && e.push(r.value);
+      (await Promise.allSettled(stickerPromises)).forEach((result) => {
+        "fulfilled" === result.status && results.push(result.value);
       }),
-      e
+      results
     );
   };
 });

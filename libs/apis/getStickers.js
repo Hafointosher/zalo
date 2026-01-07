@@ -2,24 +2,24 @@
   (exports.getStickersFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getStickersFactory = (0, utils_js_1.apiFactory)()((r, t, i) => {
-  let s = i.makeURL(r.zpwServiceMap.sticker + "/api/message/sticker");
-  return async function (r) {
-    if (!r) throw new ZaloApiError_js_1.ZaloApiError("Missing keyword");
-    var e,
-      r = { keyword: r, gif: 1, guggy: 0, imei: t.imei },
-      r = i.encodeAES(JSON.stringify(r));
-    if (r)
+exports.getStickersFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.sticker + "/api/message/sticker");
+  return async function (keyword) {
+    if (!keyword) throw new ZaloApiError_js_1.ZaloApiError("Missing keyword");
+    var stickerUrl,
+      requestParams = { keyword: keyword, gif: 1, guggy: 0, imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        ((e = new URL(s)).pathname = e.pathname + "/suggest/stickers"),
-        (e = await i.request(i.makeURL(e.toString(), { params: r }))),
-        i.resolve(e, (r) => {
-          r = r.data;
-          let e = [];
+        ((stickerUrl = new URL(endpoint)).pathname = stickerUrl.pathname + "/suggest/stickers"),
+        (response = await api.request(api.makeURL(stickerUrl.toString(), { params: encryptedParams }))),
+        api.resolve(response, (result) => {
+          data = result.data;
+          let stickerIds = [];
           return (
-            r.sugg_sticker &&
-              r.sugg_sticker.forEach((r) => e.push(r.sticker_id)),
-            e
+            data.sugg_sticker &&
+              data.sugg_sticker.forEach((sticker) => stickerIds.push(sticker.sticker_id)),
+            stickerIds
           );
         })
       );

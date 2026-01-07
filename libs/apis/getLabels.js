@@ -2,20 +2,20 @@
   (exports.getLabelsFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getLabelsFactory = (0, utils_js_1.apiFactory)()((e, r, a) => {
-  let t = a.makeURL(e.zpwServiceMap.label[0] + "/api/convlabel/get");
+exports.getLabelsFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.label[0] + "/api/convlabel/get");
   return async function () {
-    var e = { imei: r.imei },
-      e = a.encodeAES(JSON.stringify(e));
-    if (e)
+    var requestParams = { imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await a.request(a.makeURL(t, { params: e }))),
-        a.resolve(e, (e) => {
-          e = e.data;
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }))),
+        api.resolve(response, (result) => {
+          data = result.data;
           return {
-            labelData: JSON.parse(e.labelData),
-            version: e.version,
-            lastUpdateTime: e.lastUpdateTime,
+            labelData: JSON.parse(data.labelData),
+            version: data.version,
+            lastUpdateTime: data.lastUpdateTime,
           };
         })
       );

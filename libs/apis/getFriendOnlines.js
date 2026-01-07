@@ -2,24 +2,24 @@
   (exports.getFriendOnlinesFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getFriendOnlinesFactory = (0, utils_js_1.apiFactory)()((r, e, t) => {
-  let s = t.makeURL(r.zpwServiceMap.profile[0] + "/api/social/friend/onlines");
+exports.getFriendOnlinesFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.profile[0] + "/api/social/friend/onlines");
   return async function () {
-    var r = { imei: e.imei },
-      r = t.encodeAES(JSON.stringify(r));
-    if (r)
+    var requestParams = { imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (r = await t.request(t.makeURL(s, { params: r }), { method: "GET" })),
-        t.resolve(r, (r) => {
-          var e,
-            r = r.data;
-          if (Array.isArray(r.onlines))
-            for (var t of r.onlines)
-              "string" == typeof t.status &&
-                (e = JSON.parse(t.status)) &&
-                "string" == typeof e.status &&
-                (t.status = e.status);
-          return r;
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response, (result) => {
+          var parsedStatus,
+            data = result.data;
+          if (Array.isArray(data.onlines))
+            for (var friend of data.onlines)
+              "string" == typeof friend.status &&
+                (parsedStatus = JSON.parse(friend.status)) &&
+                "string" == typeof parsedStatus.status &&
+                (friend.status = parsedStatus.status);
+          return data;
         })
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");

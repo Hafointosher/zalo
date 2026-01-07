@@ -60,7 +60,7 @@ let loginQR_js_1 = require("./apis/loginQR.js"),
   update_js_1 = require("./update.js"),
   apis_js_1 = require("./apis.js");
 function randomUserAgentPC() {
-  var e = [
+  var userAgents = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.6998.166 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
@@ -75,7 +75,7 @@ function randomUserAgentPC() {
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_7_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36 OPR/119.0.0.0",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 OPR/119.0.0.0",
   ];
-  return e[Math.floor(Math.random() * e.length)];
+  return userAgents[Math.floor(Math.random() * userAgents.length)];
 }
 Object.defineProperty(exports, "API", {
   enumerable: !0,
@@ -84,97 +84,97 @@ Object.defineProperty(exports, "API", {
   },
 });
 class Zalo {
-  constructor(e = {}) {
-    ((this.options = e), (this.enableEncryptParam = !0));
+  constructor(options = {}) {
+    ((this.options = options), (this.enableEncryptParam = !0));
   }
-  parseCookies(e) {
-    let i,
-      o = Array.isArray(e) ? e : e.cookies;
-    o.forEach((e, i) => {
-      "string" == typeof e.domain &&
-        e.domain.startsWith(".") &&
-        (o[i].domain = e.domain.slice(1));
+  parseCookies(cookieData) {
+    let parsedCookie,
+      cookies = Array.isArray(cookieData) ? cookieData : cookieData.cookies;
+    cookies.forEach((cookie, index) => {
+      "string" == typeof cookie.domain &&
+        cookie.domain.startsWith(".") &&
+        (cookies[index].domain = cookie.domain.slice(1));
     });
-    var t,
-      r = new toughCookie.CookieJar();
-    for (t of o)
+    var cookie,
+      cookieJar = new toughCookie.CookieJar();
+    for (cookie of cookies)
       try {
-        r.setCookieSync(
+        cookieJar.setCookieSync(
           null !=
-            (i = toughCookie.Cookie.fromJSON({ ...t, key: t.key || t.name }))
-            ? i
+            (parsedCookie = toughCookie.Cookie.fromJSON({ ...cookie, key: cookie.key || cookie.name }))
+            ? parsedCookie
             : "",
           "https://chat.zalo.me",
         );
-      } catch (e) {
+      } catch (error) {
         (0, utils_js_1.logger)({
           options: { logging: this.options.logging },
-        }).error("Failed to set cookie:", e);
+        }).error("Failed to set cookie:", error);
       }
-    return r;
+    return cookieJar;
   }
-  validateParams(e) {
-    if (!e.imei || !e.cookie || !e.userAgent)
+  validateParams(params) {
+    if (!params.imei || !params.cookie || !params.userAgent)
       throw new ZaloApiError_js_1.ZaloApiError("Missing required params");
   }
-  async login(e) {
-    var i = (0, context_js_1.createContext)(
+  async login(credentials) {
+    var context = (0, context_js_1.createContext)(
       this.options.apiType,
       this.options.apiVersion,
     );
-    return (Object.assign(i.options, this.options), this.loginCookie(i, e));
+    return (Object.assign(context.options, this.options), this.loginCookie(context, credentials));
   }
-  async loginCookie(e, i) {
-    (await (0, update_js_1.checkUpdate)(e),
-      this.validateParams(i),
-      (e.imei = i.imei),
-      (e.cookie = this.parseCookies(i.cookie)),
-      (e.userAgent = i.userAgent),
-      (e.language = i.language || "vi"));
-    var i = await (0, login_js_1.login)(e, this.enableEncryptParam),
-      o = await (0, login_js_1.getServerInfo)(e, this.enableEncryptParam),
-      t = null == i ? void 0 : i.data;
-    if (!i || !t || !o)
+  async loginCookie(context, credentials) {
+    (await (0, update_js_1.checkUpdate)(context),
+      this.validateParams(credentials),
+      (context.imei = credentials.imei),
+      (context.cookie = this.parseCookies(credentials.cookie)),
+      (context.userAgent = credentials.userAgent),
+      (context.language = credentials.language || "vi"));
+    var loginResult = await (0, login_js_1.login)(context, this.enableEncryptParam),
+      serverInfo = await (0, login_js_1.getServerInfo)(context, this.enableEncryptParam),
+      loginData = null == loginResult ? void 0 : loginResult.data;
+    if (!loginResult || !loginData || !serverInfo)
       throw new ZaloApiError_js_1.ZaloApiError("Đăng nhập thất bại");
     if (
-      ((e.secretKey = t.zpw_enk),
-      (e.uid = t.uid),
-      (e.settings = o.setttings || o.settings),
-      (e.extraVer = o.extra_ver),
-      (e.loginInfo = t),
-      (0, context_js_1.isContextSession)(e))
+      ((context.secretKey = loginData.zpw_enk),
+      (context.uid = loginData.uid),
+      (context.settings = serverInfo.setttings || serverInfo.settings),
+      (context.extraVer = serverInfo.extra_ver),
+      (context.loginInfo = loginData),
+      (0, context_js_1.isContextSession)(context))
     )
       return (
-        (0, utils_js_1.logger)(e).info("Logged in as", t.uid),
-        new apis_js_1.API(e, t.zpw_service_map_v3, t.zpw_ws)
+        (0, utils_js_1.logger)(context).info("Logged in as", loginData.uid),
+        new apis_js_1.API(context, loginData.zpw_service_map_v3, loginData.zpw_ws)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Khởi tạo ngữ cảnh thất bại.");
   }
-  async loginQR(e, i) {
-    ((e = e || {}).userAgent || (e.userAgent = randomUserAgentPC()),
-      e.language || (e.language = "vi"));
-    var o,
-      t = (0, context_js_1.createContext)(
+  async loginQR(qrOptions, callback) {
+    ((qrOptions = qrOptions || {}).userAgent || (qrOptions.userAgent = randomUserAgentPC()),
+      qrOptions.language || (qrOptions.language = "vi"));
+    var imei,
+      context = (0, context_js_1.createContext)(
         this.options.apiType,
         this.options.apiVersion,
       ),
-      r =
-        (Object.assign(t.options, this.options),
-        await (0, loginQR_js_1.loginQR)(t, e, i));
-    if (r)
+      qrResult =
+        (Object.assign(context.options, this.options),
+        await (0, loginQR_js_1.loginQR)(context, qrOptions, callback));
+    if (qrResult)
       return (
-        (o = (0, utils_js_1.generateZaloUUID)(e.userAgent)),
-        i &&
-          i({
+        (imei = (0, utils_js_1.generateZaloUUID)(qrOptions.userAgent)),
+        callback &&
+          callback({
             type: loginQR_js_1.LoginQRCallbackEventType.GotLoginInfo,
-            data: { cookie: r.cookies, imei: o, userAgent: e.userAgent },
+            data: { cookie: qrResult.cookies, imei: imei, userAgent: qrOptions.userAgent },
             actions: null,
           }),
-        this.loginCookie(t, {
-          cookie: r.cookies,
-          imei: o,
-          userAgent: e.userAgent,
-          language: e.language,
+        this.loginCookie(context, {
+          cookie: qrResult.cookies,
+          imei: imei,
+          userAgent: qrOptions.userAgent,
+          language: qrOptions.language,
         })
       );
     throw new ZaloApiError_js_1.ZaloApiError("Unable to login with QRCode");

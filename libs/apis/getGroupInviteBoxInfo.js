@@ -3,28 +3,28 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
 exports.getGroupInviteBoxInfoFactory = (0, utils_js_1.apiFactory)()(
-  (r, e, o) => {
-    let t = o.makeURL(r.zpwServiceMap.group[0] + "/api/group/inv-box/inv-info");
-    return async function (r) {
-      var r = {
-          grId: r.groupId,
-          mcount: null != (e = r.mcount) ? e : 10,
-          mpage: null != (e = r.mpage) ? e : 1,
+  (serviceUrls, appContext, api) => {
+    let endpoint = api.makeURL(serviceUrls.zpwServiceMap.group[0] + "/api/group/inv-box/inv-info");
+    return async function (options) {
+      var requestParams = {
+          grId: options.groupId,
+          mcount: null != (mcount = options.mcount) ? mcount : 10,
+          mpage: null != (mpage = options.mpage) ? mpage : 1,
         },
-        e = o.encodeAES(JSON.stringify(r));
-      if (e)
+        encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+      if (encryptedParams)
         return (
-          (r = await o.request(o.makeURL(t, { params: e }), { method: "GET" })),
-          o.resolve(r, (r) => {
-            var e,
-              r = r.data,
-              o = r.groupInfo.topic;
+          (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+          api.resolve(response, (result) => {
+            var parsedParams,
+              data = result.data,
+              topic = data.groupInfo.topic;
             return (
-              "string" == typeof o.params &&
-                ("string" == typeof (e = JSON.parse(o.params)).extra &&
-                  (e.extra = JSON.parse(e.extra)),
-                (o.params = e)),
-              r
+              "string" == typeof topic.params &&
+                ("string" == typeof (parsedParams = JSON.parse(topic.params)).extra &&
+                  (parsedParams.extra = JSON.parse(parsedParams.extra)),
+                (topic.params = parsedParams)),
+              data
             );
           })
         );

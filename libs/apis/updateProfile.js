@@ -2,32 +2,32 @@
   (exports.updateProfileFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.updateProfileFactory = (0, utils_js_1.apiFactory)()((e, i, o) => {
-  let a = o.makeURL(e.zpwServiceMap.profile[0] + "/api/social/profile/update");
-  return async function (e) {
-    var e = {
+exports.updateProfileFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.profile[0] + "/api/social/profile/update");
+  return async function (options) {
+    var requestParams = {
         profile: JSON.stringify({
-          name: e.profile.name,
-          dob: e.profile.dob,
-          gender: e.profile.gender,
+          name: options.profile.name,
+          dob: options.profile.dob,
+          gender: options.profile.gender,
         }),
         biz: JSON.stringify({
-          desc: null == (r = e.biz) ? void 0 : r.description,
-          cate: null == (r = e.biz) ? void 0 : r.cate,
-          addr: null == (r = e.biz) ? void 0 : r.address,
-          website: null == (r = e.biz) ? void 0 : r.website,
-          email: null == (r = e.biz) ? void 0 : r.email,
+          desc: null == (biz = options.biz) ? void 0 : biz.description,
+          cate: null == (biz = options.biz) ? void 0 : biz.cate,
+          addr: null == (biz = options.biz) ? void 0 : biz.address,
+          website: null == (biz = options.biz) ? void 0 : biz.website,
+          email: null == (biz = options.biz) ? void 0 : biz.email,
         }),
-        language: i.language,
+        language: appContext.language,
       },
-      r = o.encodeAES(JSON.stringify(e));
-    if (r)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await o.request(a, {
+        (response = await api.request(endpoint, {
           method: "POST",
-          body: new URLSearchParams({ params: r }),
+          body: new URLSearchParams({ params: encryptedParams }),
         })),
-        o.resolve(e)
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

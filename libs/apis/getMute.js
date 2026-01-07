@@ -2,15 +2,15 @@
   (exports.getMuteFactory = void 0));
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
-exports.getMuteFactory = (0, utils_js_1.apiFactory)()((e, r, t) => {
-  let i = t.makeURL(e.zpwServiceMap.profile[0] + "/api/social/profile/getmute");
+exports.getMuteFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.profile[0] + "/api/social/profile/getmute");
   return async function () {
-    var e = { imei: r.imei },
-      e = t.encodeAES(JSON.stringify(e));
-    if (e)
+    var requestParams = { imei: appContext.imei },
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (e = await t.request(t.makeURL(i, { params: e }), { method: "GET" })),
-        t.resolve(e)
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response)
       );
     throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
   };

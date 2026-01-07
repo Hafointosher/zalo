@@ -3,31 +3,31 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   index_js_1 = require("../models/index.js"),
   utils_js_1 = require("../utils.js");
-exports.getListBoardFactory = (0, utils_js_1.apiFactory)()((r, a, t) => {
-  let o = t.makeURL(r.zpwServiceMap.group_board[0] + "/api/board/list");
-  return async function (r, e) {
-    var r = {
-        group_id: e,
+exports.getListBoardFactory = (0, utils_js_1.apiFactory)()((serviceUrls, appContext, api) => {
+  let endpoint = api.makeURL(serviceUrls.zpwServiceMap.group_board[0] + "/api/board/list");
+  return async function (options, groupId) {
+    var requestParams = {
+        group_id: groupId,
         board_type: 0,
-        page: null != (e = r.page) ? e : 1,
-        count: null != (e = r.count) ? e : 20,
+        page: null != (page = options.page) ? page : 1,
+        count: null != (count = options.count) ? count : 20,
         last_id: 0,
         last_type: 0,
-        imei: a.imei,
+        imei: appContext.imei,
       },
-      e = t.encodeAES(JSON.stringify(r));
-    if (e)
+      encryptedParams = api.encodeAES(JSON.stringify(requestParams));
+    if (encryptedParams)
       return (
-        (r = await t.request(t.makeURL(o, { params: e }), { method: "GET" })),
-        t.resolve(r, (r) => {
-          r = r.data;
+        (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+        api.resolve(response, (result) => {
+          data = result.data;
           return (
-            r.items.forEach((r) => {
-              r.boardType != index_js_1.BoardType.Poll &&
-                "string" == typeof (r = r.data).params &&
-                (r.params = JSON.parse(r.params));
+            data.items.forEach((item) => {
+              item.boardType != index_js_1.BoardType.Poll &&
+                "string" == typeof (itemData = item.data).params &&
+                (itemData.params = JSON.parse(itemData.params));
             }),
-            r
+            data
           );
         })
       );

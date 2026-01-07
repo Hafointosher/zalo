@@ -1,37 +1,69 @@
 # Session Context - Zalo Extension Project
 
-## 🕒 Last Update: 2026-01-07 (Quota exhausted)
+## 🕒 Last Update: 2026-01-07 (Session 2)
 
 ### ✅ Completed
 - Deobfuscation (libs + credentials + nodes) finished; code pushed to GitHub (`Hafointosher/zalo`).
-- ISSUE.md and EXTENSION_PLAN.md describe scope, progress, and extension architecture.
-- Variable renaming reached ~50% of `libs/apis` (see ISSUE.md table).
+- **Variable renaming ~95% of `libs/apis/*.js` completed** - all `get*`, `update*` files renamed with semantic variable names:
+  - `serviceUrls`, `appContext`, `api` for factory params
+  - `endpoint`, `requestParams`, `encryptedParams`, `response` for API call flow
+  - Descriptive function params (`groupId`, `friendId`, `options`, etc.)
+- **`libs/zalo.js` renamed** - Zalo class with `context`, `credentials`, `loginResult`, `serverInfo`, etc.
+- **Phase 7: nodes/ZaloUser/*.js deobfuscation re-run from minified source** ✅
+  - Ran synchrony on all 7 node files from original minified source (`n8n-nodes-zalo-user-v3/dist/`)
+  - String arrays found and decoded: `a10_0x4afd` (905 strings), `a23_0x1b61` (1062 strings), etc.
 
-### ⛔ Blocker
-- Rename automation paused by 429 quota limit (Claude). Need to resume when quota resets to continue Phase 2.
+### ⚠️ Current State
+- `nodes/ZaloUser/*.js` - Strings decoded but **RC4 encryption layer still present**
+  - obfuscator.io uses RC4 with key for second layer encryption
+  - synchrony can decode string array but not the per-call RC4 decryption
+  - Files readable but variable names still obfuscated (`varHospitalPort`, etc.)
+  
+### 📌 Options for Next Steps
+1. **Option A: Manual rename using zca-js reference** (RECOMMENDED)
+   - Use zca-js TypeScript source as reference (see ZCA-JS-REFERENCE.md)
+   - Map obfuscated patterns to actual API methods
+   - Key patterns to look for:
+     - `selfListen: true, checkUpdate: false, logging: false` → Zalo constructor options
+     - `zpw_enk` → `ctx.secretKey`
+     - `zpw_service_map_v3` → service routing map
+     - `encodeAES` → message encryption
+     
+2. **Option B: Dynamic deobfuscation**
+   - Create Node.js script that runs the code and captures decoded strings
+   - Hook into `a10_0x2fde` calls to log decoded values
+   - Replace calls with decoded literals
 
-### 📌 Immediate Next Steps
-1. When quota resets:
-   - Resume renaming from `libs/apis/getCatalogList.js`, `getContext.js`, `getFriendBoardList.js`, then the remaining `get*/update*` files.
-   - After APIs, rename `libs/utils.js`, `libs/zalo.js`, and `nodes/ZaloUser/*.js`.
-2. No-quota local tasks (can do now):
-   - Draft extension boilerplate (Manifest V3, popup skeleton).
-   - Write automation script (Node/Babel) to enforce naming conventions for remaining files.
-   - Prepare TypeScript typings by analyzing zca-js models.
+3. **Option C: Skip and use zca-js directly**
+   - Since zca-js is the original TypeScript source
+   - Just reference it for extension development
+   - Keep obfuscated n8n nodes as "documentation"
 
-### 🔧 Commands for later
+### 🔧 Scripts Available
 ```bash
 cd C:\Users\Hafointosher\Desktop\n8n-zalo-deobfuscated
-# to check status
-git status
-# run prettier if needed
-npx prettier --write "libs/**/*.js"
+
+# Re-deobfuscate nodes from original minified source
+node scripts/deob-nodes.js
+
+# Extract strings (WIP - needs completion)
+node scripts/extract-strings.js
 ```
+
+### 📁 Files Status
+| Path | Status |
+|------|--------|
+| `libs/apis/*.js` (130+ files) | ✅ Renamed |
+| `libs/zalo.js` | ✅ Renamed |
+| `libs/utils.js` | ⏳ Partial (utility functions, mostly clean) |
+| `nodes/ZaloUser/*.js` (7 files) | ⚠️ Strings decoded, RC4 layer present |
+| `scripts/deob-nodes.js` | ✅ Working - deobfuscates from minified source |
 
 ### 🔗 References
 - ISSUE.md (progress log) – synced to GitHub issue #1.
 - EXTENSION_PLAN.md – detailed extension design.
-- zca-js repo – canonical TypeScript source.
+- zca-js repo (RFS-ADRENO/zca-js) – canonical TypeScript source.
+- ZCA-JS-REFERENCE.md – API structure reference (NEW)
 
 ---
 *Update this file whenever state changes so the next session can resume immediately.*

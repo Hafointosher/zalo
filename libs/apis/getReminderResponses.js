@@ -3,16 +3,16 @@
 let ZaloApiError_js_1 = require("../Errors/ZaloApiError.js"),
   utils_js_1 = require("../utils.js");
 exports.getReminderResponsesFactory = (0, utils_js_1.apiFactory)()(
-  (e, r, o) => {
-    let s = o.makeURL(
-      e.zpwServiceMap.group_board[0] + "/api/board/topic/listResponseEvent",
+  (serviceUrls, appContext, api) => {
+    let endpoint = api.makeURL(
+      serviceUrls.zpwServiceMap.group_board[0] + "/api/board/topic/listResponseEvent",
     );
-    return async function (e) {
-      var e = o.encodeAES(JSON.stringify({ eventId: e }));
-      if (e)
+    return async function (eventId) {
+      var encryptedParams = api.encodeAES(JSON.stringify({ eventId: eventId }));
+      if (encryptedParams)
         return (
-          (e = await o.request(o.makeURL(s, { params: e }), { method: "GET" })),
-          o.resolve(e)
+          (response = await api.request(api.makeURL(endpoint, { params: encryptedParams }), { method: "GET" })),
+          api.resolve(response)
         );
       throw new ZaloApiError_js_1.ZaloApiError("Failed to encrypt params");
     };
