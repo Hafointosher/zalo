@@ -1,99 +1,59 @@
 # Session Context - Zalo Extension Project
 
-## 🎯 Current State (2026-01-07)
+## 🕒 Last Update: 2026-01-07 (Quota reached)
 
-### What We're Building
-1. **Chrome/Edge Extension** for Zalo automation (PRIMARY)
-2. **n8n Node rebuild** (SECONDARY)
+### ✅ Completed Today
+- Finished variable renaming for 30+ API files (list in ISSUE.md)
+- Targeted `add*/delete*/create*/edit*` APIs
+- Updated ISSUE.md with progress snapshot
+- Logged next tasks due to quota exhaustion
 
-### Key Resources
-- **zca-js**: https://github.com/RFS-ADRENO/zca-js (TypeScript source - USE THIS)
-- **ZaloDataExtractor**: https://github.com/JustKemForFun/ZaloDataExtractor (Extension template)
-- **Deobfuscated code**: This repo (backup reference only)
+### ❗ Current Blocker
+> **Model quota exceeded (429)** while renaming `getCatalogList.js`. Resume once quota resets (~4h from last attempt).
 
-### Variable Naming Convention
-When renaming obfuscated variables, use:
-```javascript
-// Factory pattern: apiFactory()((param1, param2, param3) => { ... })
-param1 → serviceUrls     // contains zpwServiceMap
-param2 → appContext      // contains imei, settings, language
-param3 → api             // contains makeURL, encodeAES, request, resolve
+### 🔄 Resume Checklist (after quota refresh)
+1. Continue renaming starting from:
+   - `getCatalogList.js`
+   - `getContext.js`
+   - `getFriendBoardList.js`
+   - Remaining `get*.js`, `update*.js`
+   - `libs/utils.js`, `libs/zalo.js`
+   - `nodes/ZaloUser/*.js`
 
-// Common variables
-URL variable      → endpoint, apiUrl
-Request object    → requestParams
-Encrypted data    → encryptedParams
-API response      → response
-Thread ID         → threadId
-Thread type       → threadType
-Is group check    → isGroupThread
-User ID           → userId
-Group ID          → groupId
-Message           → message, messageData
-```
+2. After renaming ~80% of APIs, move to extension boilerplate:
+   - Fork structure from `ZaloDataExtractor`
+   - Create Manifest V3 for "Zalo Tools"
+   - Setup popup UI skeleton
 
-### Files Already Renamed (~40%)
-See ISSUE.md for full list. Key files done:
-- sendMessage.js, listen.js (complex)
-- login.js, getUserInfo.js
-- All friend/group management APIs
+3. Port zca-js core modules to browser environment (use `zca-js` repo)
 
-### Files Still Need Renaming (~60%)
-- Most `get*.js` files
-- `update*.js` files  
-- `libs/utils.js`, `libs/zalo.js`
-- `nodes/ZaloUser/*.js`
+### 📦 Key Files to Inspect Next
+- `libs/apis/getCatalogList.js`
+- `libs/apis/getContext.js`
+- `libs/apis/getFriendBoardList.js`
+- `libs/utils.js`
+- `libs/zalo.js`
 
-## 📋 Next Steps (Priority Order)
-
-1. **Create Extension Boilerplate**
-   - Clone ZaloDataExtractor as base
-   - Update manifest.json for Zalo Tools
-   - Setup project structure per EXTENSION_PLAN.md
-
-2. **Port zca-js to Browser**
-   - Copy crypto functions (use crypto-js)
-   - Adapt fetch wrapper for browser
-   - Test encryption/decryption
-
-3. **Build Popup UI**
-   - Credential extraction (IMEI, cookies)
-   - Quick actions (copy, export)
-   - Connection status
-
-4. **WebSocket Listener**
-   - Intercept Zalo WebSocket in content script
-   - Forward messages to extension
-   - Real-time notifications
-
-## 🔧 Commands to Resume
-
+### 🔁 Commands (when resuming)
 ```bash
-# Navigate to project
 cd C:\Users\Hafointosher\Desktop\n8n-zalo-deobfuscated
-
-# Check git status
+# Check git status before modifications
 git status
-
-# Continue renaming (example)
-# Read file → understand → rewrite with meaningful names
+# Use Run Task or rename manually per file
 ```
 
-## 📁 Project Locations
+### 🧠 Naming Rules Reminder
+```javascript
+serviceUrls → appContext → api    // factory parameters
+encryptedParams, requestParams
+threadId, threadType, isGroupThread
+userId, groupId, message, response
+```
 
-| Path | Description |
-|------|-------------|
-| `C:\Users\Hafointosher\Desktop\n8n-zalo-deobfuscated` | Deobfuscated source |
-| `libs/apis/*.js` | 131 API functions |
-| `EXTENSION_PLAN.md` | Detailed extension design |
-| `ISSUE.md` | Project overview & progress |
-
-## 💡 Key Insights
-
-1. **Don't use deobfuscated code directly** - zca-js already has clean TypeScript
-2. **Extension approach**: Content script intercepts → Service worker processes → Popup/Dashboard displays
-3. **CORS workaround**: Make API calls from content script (same origin as Zalo)
-4. **Encryption**: crypto-js works in browser, same as zca-js uses
+### 🔗 References
+- `ISSUE.md` – latest progress summary
+- `EXTENSION_PLAN.md` – extension architecture
+- `zca-js` – clean TypeScript source
 
 ---
-*This file helps preserve context between sessions. Update before ending each session.*
+*Update this file at the end of each session to capture context when switching threads or waiting for quota.*
